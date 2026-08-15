@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>去 AI 味檢查</title>
+<style>
+  :root{
+    --bg:#14161a; --panel:#1c1f25; --panel2:#21252c; --line:#2e333c;
+    --fg:#e6e8ec; --dim:#9aa3b0; --dimmer:#6b7280;
+    --A:#4d8bf0; --B:#e8833a; --C:#e05fa8; --D:#e2565a;
+    --E:#9b6ee8; --F:#2fa8a0; --X:#7b8494; --soft:#d6a520;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:15px; line-height:1.75;
+  }
+  .wrap{max-width:1280px; margin:0 auto; padding:20px 20px 60px}
+  header{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+  h1{font-size:19px; margin:0; font-weight:700}
+  .sub{color:var(--dim); font-size:13px}
+  .bar{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:10px 14px; margin:12px 0;
+  }
+  .score{font-size:16px; font-weight:700}
+  .score .n{font-size:20px}
+  .ok{color:#3ec46d}
+  .bad{color:var(--D)}
+  .warn{color:var(--soft)}
+  .bar .meta{color:var(--dimmer); font-size:13px; margin-left:auto}
+  textarea{
+    width:100%; min-height:190px; resize:vertical;
+    background:var(--panel); color:var(--fg);
+    border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+    font-family:inherit; font-size:15px; line-height:1.75;
+  }
+  textarea:focus{outline:none; border-color:#3d4756}
+  .btns{display:flex; gap:8px; margin:10px 0 0}
+  button{
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    border-radius:6px; padding:6px 14px; font-family:inherit; font-size:13px; cursor:pointer;
+  }
+  button:hover{border-color:#4a525f; background:#272c34}
+  .cols{display:grid; grid-template-columns:1.35fr 1fr; gap:16px; margin-top:16px; align-items:start}
+  @media (max-width:900px){ .cols{grid-template-columns:1fr} }
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:8px}
+  .panel h2{
+    font-size:13px; margin:0; padding:10px 14px; border-bottom:1px solid var(--line);
+    color:var(--dim); font-weight:600; letter-spacing:.04em;
+  }
+  #out{padding:14px; white-space:pre-wrap; word-break:break-word; max-height:62vh; overflow:auto}
+  #out .empty, #list .empty{color:var(--dimmer); font-size:14px}
+  mark{
+    background:transparent; color:inherit; border-radius:3px;
+    padding:1px 1px; border-bottom:2px solid currentColor; cursor:help;
+  }
+  mark.cA{color:var(--A)} mark.cB{color:var(--B)} mark.cC{color:var(--C)}
+  mark.cD{color:var(--D)} mark.cE{color:var(--E)} mark.cF{color:var(--F)}
+  mark.cX{color:var(--X)}
+  mark.soft{color:var(--soft); border-bottom-style:dashed}
+  mark.flash{background:rgba(255,255,255,.22); transition:background .05s}
+  #list{padding:6px 0 10px; max-height:62vh; overflow:auto}
+  .grp{padding:8px 14px 2px; font-size:12px; color:var(--dim); font-weight:600}
+  .hit{
+    padding:7px 14px; border-left:3px solid transparent; cursor:pointer;
+  }
+  .hit:hover{background:#242830}
+  .hit.gA{border-left-color:var(--A)} .hit.gB{border-left-color:var(--B)}
+  .hit.gC{border-left-color:var(--C)} .hit.gD{border-left-color:var(--D)}
+  .hit.gE{border-left-color:var(--E)} .hit.gF{border-left-color:var(--F)}
+  .hit.gX{border-left-color:var(--X)}
+  .hit.gsoft{border-left-color:var(--soft)}
+  .hit .w{font-weight:700}
+  .hit .tip{color:var(--dim); font-size:13px; line-height:1.6}
+  .hit .ctx{color:var(--dimmer); font-size:12px; margin-top:3px; line-height:1.6}
+  .tag{
+    display:inline-block; font-size:11px; padding:1px 6px; border-radius:4px;
+    border:1px solid var(--line); color:var(--dim); margin-right:6px; vertical-align:1px;
+  }
+  footer{
+    margin-top:22px; background:var(--panel); border:1px solid var(--line);
+    border-radius:8px; padding:14px 18px;
+  }
+  footer h3{font-size:13px; margin:0 0 8px; color:var(--dim); font-weight:600}
+  footer ul{margin:0; padding-left:20px; color:var(--dim); font-size:14px}
+  footer li{margin:4px 0}
+  footer .src{margin-top:12px; font-size:12px; color:var(--dimmer)}
+  code{background:#0f1114; padding:1px 5px; border-radius:4px; font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>去 AI 味檢查</h1>
+    <span class="sub">貼上文字就掃，純離線、不上傳、不改字</span>
+  </header>
+
+  <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）"></textarea>
+  <div class="btns">
+    <button id="sample">試試範例</button>
+    <button id="clear">清空</button>
+  </div>
+
+  <div class="bar">
+    <span class="score" id="score">等著你貼東西進來</span>
+    <span class="meta" id="meta"></span>
+  </div>
+
+  <div class="cols">
+    <section class="panel">
+      <h2>全文（命中處畫底線，滑鼠移上去看改法）</h2>
+      <div id="out"><span class="empty">還沒有內容。</span></div>
+    </section>
+    <section class="panel">
+      <h2>命中清單（點一筆跳到位置）</h2>
+      <div id="list"><span class="empty">還沒有內容。</span></div>
+    </section>
+  </div>
+
+  <footer>
+    <h3>正則抓不到的，交付前自己過一遍</h3>
+    <ul>
+      <li><b>能不能拍成電影？</b>有溫度、氣味、畫面、動作才是真寫作；拍不出來就是 AI 味。</li>
+      <li><b>唸出聲會不會像作文範本？</b>太順、太對稱、太工整就重寫。句子要有長有短。</li>
+      <li><b>看得到「誰」嗎？</b>寫得出阿芳穿藍外套喝冰美式，而不是「一位朋友」。</li>
+      <li><b>具體錨點是真的嗎？</b>不能為了具體而編故事；匿名化的客戶情境要標「示意」。</li>
+    </ul>
+    <div class="src">
+      規則複製自 <code>D:\qkangber\scripts\check-ai-style.mjs</code>（43 條），來源文件
+      <code>D:\qkangber\docs\anti-ai-style.md</code>。那邊改了規則，回來覆蓋本檔 <code>&lt;script&gt;</code> 最上方的 RULES 區塊。
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ============================================================
+// ===== 規則從這裡開始（對應 check-ai-style.mjs 的 RULES）=====
+// 欄位：[正則, 類別, 說明, 選項]
+// 選項 scope: "text"(預設，掃內文) / "raw"(掃原始輸入) / "heading"(只掃像標題的行)
+// 選項 soft: true 代表「待確認」，不一定要改，用黃色虛線標
+// ============================================================
+const RULES = [
+  // A. 灌水開頭／教科書過渡詞
+  [/深入(探討|挖掘|了解)/g, "A 灌水開頭", "AI 灌水開頭，直接講下一件事"],
+  [/讓我們深入/g, "A 灌水開頭", "說教式開場"],
+  [/值得注意的是/g, "A 灌水開頭", "說教式過渡詞"],
+  [/必須記住/g, "A 灌水開頭", "說教式過渡詞"],
+  [/(綜上所述|總而言之)/g, "A 灌水開頭", "僵化結尾套話"],
+  [/(先)?(誠實|老實|坦白)(講|說)/g, "A 灌水開頭", "宣告式誠實開場，真要誠實的人直接講那件事"],
+  [/說(真的|實話)/g, "A 灌水開頭", "宣告式開場，直接講"],
+  [/(不得不說|不諱言)/g, "A 灌水開頭", "宣告式開場"],
+  [/(我|這篇文?章?|本文|接下來|下面)(會|將)(說|講|告訴|介紹|教你|帶你|分享|談談?)/g, "A 灌水開頭", "宣告式『我會說清楚／這篇會告訴你』，本來就會講不用先昭告，直接講那件事"],
+  [/帶你(一起)?(了解|看懂|搞懂|認識|走過|拆解)/g, "A 灌水開頭", "宣告式導引，直接講內容"],
+  [/(把)?話(講|說)在?前(面|頭)/g, "A 灌水開頭", "宣告式『把話講在前面』，直接講那件事就好"],
+  [/舉個?[^，。！？]{0,8}(例子|案例|例來說)/g, "A 灌水開頭", "宣告式『舉例』報幕，直接把例子講出來不用先昭告"],
+  [/先(交代|說明|解釋)(一下)?[^，。！？]{0,12}(是什麼|背景)?[。：]/g, "A 灌水開頭", "宣告式『先交代／先說明』報幕，刪掉這句直接講內容"],
+  [/比如說/g, "A 灌水開頭", "『比如說』當開場報幕，直接講例子"],
+  [/(講|說|聊|談|介紹)完(了)?[，,]\s*(來|這段|接下來|下面|下一)/g, "A 換段過場", "『X 講完了，來接 Y』換段過場報幕，直接寫下一段內容"],
+  [/一句話(講完|總結|概括)[：:]/g, "A 灌水開頭", "宣告式『一句話講完：』報幕，直接把那句話寫出來"],
+  [/長(什麼|怎)樣/g, "A 懸念標題", "「…長什麼樣」吊胃口標題，改成直接說要分享什麼＋吃關鍵字", {scope:"heading"}],
+  [/^[\s#]*先(搞懂|弄懂|了解|認識|理解|搞清楚)/g, "A 懸念標題", "標題「先搞懂…」是對讀者下指令的報幕腔，直接講主題", {scope:"heading"}],
+  [/簡單(來說|講|說)[，：:]/g, "A 灌水開頭", "『簡單來說』開場報幕，直接講"],
+  [/來(接|看)真的/g, "A 換段過場", "『來接真的／來看真的』空過場，直接講內容"],
+  [/真正(好玩|有趣|精彩|厲害)的(才|就)(開始|來了)/g, "A 換段過場", "『真正好玩的才開始』灌水過場，刪掉直接講"],
+  [/好戲(才|就)?(在後頭|登場|開始)/g, "A 換段過場", "灌水過場，刪掉直接講"],
+  // B. 浮誇強調詞
+  [/至關重要/g, "B 浮誇強調", "用數字或後果代替"],
+  [/(樞紐的|關鍵的一(環|步))/g, "B 浮誇強調", "浮誇強調，講具體後果"],
+  [/不可磨滅/g, "B 浮誇強調", "空洞誇飾（不可磨滅的印記）"],
+  [/凸顯了|強調了/g, "B 浮誇強調", "抽象當主詞"],
+  [/(刺眼|觸目驚心|怵目驚心|血淋淋|發人深省|耐人尋味)/g, "B 浮誇強調", "給抽象事物套虛無感官／情緒形容詞，直接講事實"],
+  // C. 社群情緒假詞
+  [/懂的都懂/g, "C 情緒假詞", "裝熟空話"],
+  [/接住(你|妳)的情緒/g, "C 情緒假詞", "做作感性"],
+  // D. 經典 AI 句型
+  [/這不是[^，。！？]{0,20}，[^，。！？]{0,8}而是/g, "D AI句型", "「這不是…而是…」工整反轉金句"],
+  [/不僅是[^，。！？]{0,20}，[^，。！？]{0,8}更是/g, "D AI句型", "「不僅是…更是…」無限昇華"],
+  [/從[^，。！？]{1,12}到[^，。！？]{1,12}，/g, "D AI句型", "「從…到…」假範圍（確認跨度合理再保留）", {soft:true}],
+  [/(閃得掉|躲得掉|躲不過|逃不掉)/g, "D AI句型", "硬找俏皮動詞包裝「可以避免」，刪掉或改平實的「都能避開」"],
+  [/根本不(在|是)(同一個|同一回|一回)/g, "D AI句型", "「根本不在同一個賽道」式聳動斷言，只有音量沒有資訊，改講具體差異"],
+  [/出手/g, "D AI句型", "「出手」當「操作」用的武俠腔，改「動手／要人操作」"],
+  [/——/g, "D AI句型", "破折號濫用，99% 秒判 AI；確認真的需要再保留", {soft:true}],
+  // E. 空洞讚美／模糊歸因／格式殘留
+  [/(燈塔|見證|文化遺產中心)/g, "E 空洞讚美", "空洞讚美，換可驗證事實"],
+  [/批評者認為|有人認為/g, "E 模糊歸因", "歸因要指名"],
+  [/\*\*|(?<!#)##(?!#)/g, "E 格式殘留", "Markdown 殘留跑進正文", {scope:"raw"}],
+  // F. 抽象化／概念名詞化
+  [/(自我的探索|認同感的建構|效率的提升|價值的展現)/g, "F 抽象化", "名詞化換動詞口語"],
+  [/某個?(午後|夜晚|時刻)/g, "F 缺錨點", "換真實時間"],
+  [/大幅(提升|改善|增加|降低)/g, "F 缺錨點", "換具體數字"],
+  // 老形容詞（既有風格規則）
+  [/(非常|相當|極為)/g, "風格 贅詞", "避免空形容詞", {soft:true}],
+];
+// ===== 規則到這裡結束 =====
+
+const CAT_ORDER = ["A", "B", "C", "D", "E", "F", "風"];
+const CAT_CLASS = { A:"A", B:"B", C:"C", D:"D", E:"E", F:"F", 風:"X" };
+
+const $in = document.getElementById("in");
+const $out = document.getElementById("out");
+const $list = document.getElementById("list");
+const $score = document.getElementById("score");
+const $meta = document.getElementById("meta");
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// 有 HTML 標籤才去標籤；區塊標籤換成換行，讓標題自成一行（沿用 check-ai-style.mjs 的去標籤思路）
+function hasTags(raw) {
+  return /<\/?[a-z][a-z0-9]*(\s[^>]*)?>/i.test(raw);
+}
+function toPlain(raw) {
+  return raw
+    .replace(/<\s*\/?\s*(h[1-6]|p|div|li|ul|ol|tr|td|section|article|blockquote|br|hr|figure|figcaption)(\s[^>]*)?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// 像標題的行：單獨成行、30 字內、結尾沒有標點，或以 # 開頭
+function isHeadingLine(line) {
+  const t = line.trim();
+  if (!t) return false;
+  if (/^#{1,6}\s*/.test(t)) return true;
+  return t.length <= 30 && !/[。，、；！？!?,.;:：]$/.test(t);
+}
+
+function ctxOf(src, start, end) {
+  return src.slice(Math.max(0, start - 20), Math.min(src.length, end + 20))
+            .replace(/\s+/g, " ").trim();
+}
+
+function runRule(rule, src, base, hits, ctxSrc, anchored) {
+  const [re, cat, tip, opt] = rule;
+  const soft = !!(opt && opt.soft);
+  re.lastIndex = 0;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    if (m[0].length === 0) { re.lastIndex++; continue; }
+    const start = base + m.index;
+    const end = start + m[0].length;
+    hits.push({
+      start, end, word: m[0], cat, tip, soft, anchored,
+      ctx: ctxOf(anchored ? ctxSrc : src, anchored ? start : m.index, anchored ? end : m.index + m[0].length),
+    });
+    if (!re.global) break;
+  }
+}
+
+function scan(raw) {
+  const tagged = hasTags(raw);
+  const plain = tagged ? toPlain(raw) : raw;
+  const hits = [];
+
+  // 行索引（給 heading 規則用）
+  const lines = [];
+  let off = 0;
+  for (const line of plain.split("\n")) {
+    lines.push({ text: line, start: off });
+    off += line.length + 1;
+  }
+
+  for (const rule of RULES) {
+    const scope = (rule[3] && rule[3].scope) || "text";
+    if (scope === "heading") {
+      for (const ln of lines) {
+        if (!isHeadingLine(ln.text)) continue;
+        runRule(rule, ln.text, ln.start, hits, plain, true);
+      }
+    } else if (scope === "raw") {
+      // 純文字輸入時 raw === plain，位置可對齊可標紅；HTML 輸入時只列清單不標紅
+      if (tagged) runRule(rule, raw, 0, hits, raw, false);
+      else runRule(rule, plain, 0, hits, plain, true);
+    } else {
+      runRule(rule, plain, 0, hits, plain, true);
+    }
+  }
+
+  // 排序：起點小的優先，同起點取長的
+  hits.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+
+  // 挑出實際要標紅的片段（重疊的只留第一個，避免 mark 巢狀）
+  const marks = [];
+  let lastEnd = -1;
+  for (const h of hits) {
+    if (!h.anchored) continue;
+    if (h.start >= lastEnd) { h.markIndex = marks.length; marks.push(h); lastEnd = h.end; }
+  }
+  // 被蓋掉的命中，指向包住它的那個標記
+  for (const h of hits) {
+    if (h.markIndex !== undefined || !h.anchored) continue;
+    const owner = marks.findIndex(mk => mk.start <= h.start && h.start < mk.end);
+    if (owner >= 0) h.markIndex = owner;
+  }
+
+  return { plain, hits, marks, tagged };
+}
+
+function render(raw) {
+  if (!raw.trim()) {
+    $out.innerHTML = '<span class="empty">還沒有內容。</span>';
+    $list.innerHTML = '<span class="empty">還沒有內容。</span>';
+    $score.textContent = "等著你貼東西進來";
+    $score.className = "score";
+    $meta.textContent = "";
+    return;
+  }
+
+  const { plain, hits, marks, tagged } = scan(raw);
+  const hard = hits.filter(h => !h.soft).length;
+  const soft = hits.length - hard;
+
+  // 計分條
+  if (hits.length === 0) {
+    $score.innerHTML = '<span class="ok">✓ 通過，沒有命中黑名單</span>';
+  } else {
+    const parts = [];
+    if (hard) parts.push('<span class="bad">命中 <span class="n">' + hard + '</span> 處</span>');
+    if (soft) parts.push('<span class="warn">待確認 <span class="n">' + soft + '</span> 處</span>');
+    $score.innerHTML = parts.join('　／　');
+  }
+  $meta.textContent = plain.replace(/\s/g, "").length + " 字"
+    + (tagged ? "（已去除 HTML 標籤）" : "")
+    + "　總計 " + hits.length + " 處";
+
+  // 全文標紅
+  let html = "", cur = 0;
+  for (const mk of marks) {
+    html += esc(plain.slice(cur, mk.start));
+    const cls = "c" + (CAT_CLASS[mk.cat.charAt(0)] || "X") + (mk.soft ? " soft" : "");
+    html += '<mark class="' + cls + '" id="mk' + mk.markIndex + '" title="' + esc(mk.cat + "：" + mk.tip) + '">'
+          + esc(plain.slice(mk.start, mk.end)) + "</mark>";
+    cur = mk.end;
+  }
+  html += esc(plain.slice(cur));
+  $out.innerHTML = html || '<span class="empty">還沒有內容。</span>';
+
+  // 命中清單（依類別分組，全部列出，數量與 check-ai-style.mjs 一致）
+  if (hits.length === 0) {
+    $list.innerHTML = '<span class="empty">沒有命中，收工。</span>';
+    return;
+  }
+  const groups = new Map();
+  for (const h of hits) {
+    if (!groups.has(h.cat)) groups.set(h.cat, []);
+    groups.get(h.cat).push(h);
+  }
+  const cats = [...groups.keys()].sort((a, b) => {
+    const ia = CAT_ORDER.indexOf(a.charAt(0)), ib = CAT_ORDER.indexOf(b.charAt(0));
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+  });
+
+  let out = "";
+  for (const cat of cats) {
+    const arr = groups.get(cat);
+    out += '<div class="grp">' + esc(cat) + "（" + arr.length + "）</div>";
+    for (const h of arr) {
+      const g = h.soft ? "gsoft" : "g" + (CAT_CLASS[cat.charAt(0)] || "X");
+      out += '<div class="hit ' + g + '" data-mk="' + (h.markIndex === undefined ? "" : h.markIndex) + '">'
+        + '<div>' + (h.soft ? '<span class="tag">待確認</span>' : "")
+        + '<span class="w">「' + esc(h.word) + '」</span></div>'
+        + '<div class="tip">' + esc(h.tip) + "</div>"
+        + '<div class="ctx">…' + esc(h.ctx) + "…</div>"
+        + "</div>";
+    }
+  }
+  $list.innerHTML = out;
+}
+
+$list.addEventListener("click", (e) => {
+  const row = e.target.closest(".hit");
+  if (!row || !row.dataset.mk) return;
+  const el = document.getElementById("mk" + row.dataset.mk);
+  if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.add("flash");
+  setTimeout(() => el.classList.remove("flash"), 900);
+});
+
+let timer;
+$in.addEventListener("input", () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => render($in.value), 200);
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+  $in.value = "";
+  render("");
+  $in.focus();
+});
+
+document.getElementById("sample").addEventListener("click", () => {
+  $in.value = [
+    "先誠實講，這篇會告訴你一件事。",
+    "",
+    "先搞懂這 10 款工具的分工",
+    "",
+    "值得注意的是，自動化對現代團隊至關重要，能大幅提升效率。舉個例子，我某個午後深入探討了這個問題，數字看起來相當觸目驚心。",
+    "",
+    "概念講完了，來接真的。這不是工具的問題，而是流程的問題；它不僅是一個外掛，更是一整套方法論——懂的都懂。",
+    "",
+    "**重點**：從行銷到財務，許多企業都在做這件事。簡單來說，人只要在最前面出手一次，剩下的風險都閃得掉。",
+  ].join("\n");
+  render($in.value);
+});
+
+render("");
+</script>
+</body>
+</html>
