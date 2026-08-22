@@ -4,140 +4,257 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>去 AI 味檢查</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#14161a; --panel:#1c1f25; --panel2:#21252c; --line:#2e333c;
-    --fg:#e6e8ec; --dim:#9aa3b0; --dimmer:#6b7280;
-    --A:#4d8bf0; --B:#e8833a; --C:#e05fa8; --D:#e2565a;
-    --E:#9b6ee8; --F:#2fa8a0; --X:#7b8494; --soft:#d6a520;
+    --paper:#efe9dd;   /* 紙面底色 */
+    --panel:#faf7f0;   /* 分格內底色 */
+    --tone:#ded7c8;    /* 圖片格／網點底 */
+    --ink:#17150f;     /* 墨線 */
+    --red:#c0392b;     /* 朱紅 */
+    --dim:#5b544a;
+    --dimmer:#8a8272;
+    --rule:#b9b1a1;    /* 虛線分隔 */
+    --hl:#f3c9c3;      /* 命中螢光 */
+    --font-mincho:"Zen Old Mincho","Yu Mincho","Noto Serif TC","Songti TC",serif;
+    --font-ui:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Segoe UI",sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   *{box-sizing:border-box}
   body{
-    margin:0; background:var(--bg); color:var(--fg);
-    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
-    font-size:15px; line-height:1.75;
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-ui); font-size:15px; line-height:1.85;
   }
-  .wrap{max-width:1280px; margin:0 auto; padding:20px 20px 60px}
-  header{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px}
-  h1{font-size:19px; margin:0; font-weight:700}
-  .sub{color:var(--dim); font-size:13px}
-  .bar{
-    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-    background:var(--panel); border:1px solid var(--line); border-radius:8px;
-    padding:10px 14px; margin:12px 0;
+  a{color:var(--red)}
+  a:hover{color:var(--ink)}
+  ::selection{background:#f6d9d4}
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 28px 96px}
+
+  /* ── 刊頭 ─────────────────────────────── */
+  .masthead{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    border-bottom:4px solid var(--ink); padding-bottom:12px;
   }
-  .score{font-size:16px; font-weight:700}
-  .score .n{font-size:20px}
-  .ok{color:#3ec46d}
-  .bad{color:var(--D)}
-  .warn{color:var(--soft)}
-  .bar .meta{color:var(--dimmer); font-size:13px; margin-left:auto}
-  textarea{
-    width:100%; min-height:190px; resize:vertical;
-    background:var(--panel); color:var(--fg);
-    border:1px solid var(--line); border-radius:8px; padding:12px 14px;
-    font-family:inherit; font-size:15px; line-height:1.75;
+  .masthead h1{
+    font-family:var(--font-mincho); font-size:38px; font-weight:900;
+    letter-spacing:.08em; margin:0;
   }
-  textarea:focus{outline:none; border-color:#3d4756}
-  .btns{display:flex; gap:8px; margin:10px 0 0}
-  button{
-    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
-    border-radius:6px; padding:6px 14px; font-family:inherit; font-size:13px; cursor:pointer;
+  .masthead-right{display:flex; align-items:center; gap:14px; padding-bottom:6px}
+  .tagline{font-size:12.5px; letter-spacing:.2em; color:var(--dim)}
+  .stamp{width:118px; height:118px; border:3px solid var(--ink); flex:none}
+  .seal{
+    font-family:var(--font-mincho); font-size:13px; font-weight:700; color:#fff;
+    background:var(--red); padding:5px 9px; letter-spacing:.14em;
   }
-  button:hover{border-color:#4a525f; background:#272c34}
-  .cols{display:grid; grid-template-columns:1.35fr 1fr; gap:16px; margin-top:16px; align-items:start}
-  @media (max-width:900px){ .cols{grid-template-columns:1fr} }
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:8px}
-  .panel h2{
-    font-size:13px; margin:0; padding:10px 14px; border-bottom:1px solid var(--line);
-    color:var(--dim); font-weight:600; letter-spacing:.04em;
+
+  /* ── 圖片分格：把圖丟進 assets/ 就會蓋掉提示 ── */
+  .slot{
+    position:relative; overflow:hidden;
+    background:radial-gradient(var(--rule) 1px,transparent 1.4px) 0 0/7px 7px, var(--tone);
   }
-  #out{padding:14px; white-space:pre-wrap; word-break:break-word; max-height:62vh; overflow:auto}
-  #out .empty, #list .empty{color:var(--dimmer); font-size:14px}
-  mark{
-    background:transparent; color:inherit; border-radius:3px;
-    padding:1px 1px; border-bottom:2px solid currentColor; cursor:help;
+  .slot img{position:relative; z-index:1; display:block; width:100%; height:100%; object-fit:cover}
+  .slot-hint{
+    position:absolute; inset:0; z-index:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:10px; font-family:var(--font-mincho); font-size:13px;
+    letter-spacing:.14em; color:#7d7566;
   }
-  mark.cA{color:var(--A)} mark.cB{color:var(--B)} mark.cC{color:var(--C)}
-  mark.cD{color:var(--D)} mark.cE{color:var(--E)} mark.cF{color:var(--F)}
-  mark.cX{color:var(--X)}
-  mark.soft{color:var(--soft); border-bottom-style:dashed}
-  mark.flash{background:rgba(255,255,255,.22); transition:background .05s}
-  #list{padding:6px 0 10px; max-height:62vh; overflow:auto}
-  .grp{padding:8px 14px 2px; font-size:12px; color:var(--dim); font-weight:600}
-  .hit{
-    padding:7px 14px; border-left:3px solid transparent; cursor:pointer;
+  .hero{width:100%; height:400px; border:4px solid var(--ink); border-top:0}
+  .strip{margin-top:16px; aspect-ratio:2172/724; border:3px solid var(--ink)}
+  .side{margin-top:12px; aspect-ratio:4/3; border:3px solid var(--ink)}
+  .portrait{height:300px}
+  .episode{
+    position:absolute; z-index:2; pointer-events:none; background:var(--paper);
+    font-family:var(--font-mincho); font-weight:700; letter-spacing:.2em;
   }
-  .hit:hover{background:#242830}
-  .hit.gA{border-left-color:var(--A)} .hit.gB{border-left-color:var(--B)}
-  .hit.gC{border-left-color:var(--C)} .hit.gD{border-left-color:var(--D)}
-  .hit.gE{border-left-color:var(--E)} .hit.gF{border-left-color:var(--F)}
-  .hit.gX{border-left-color:var(--X)}
-  .hit.gsoft{border-left-color:var(--soft)}
-  .hit .w{font-weight:700}
-  .hit .tip{color:var(--dim); font-size:13px; line-height:1.6}
-  .hit .ctx{color:var(--dimmer); font-size:12px; margin-top:3px; line-height:1.6}
-  .tag{
-    display:inline-block; font-size:11px; padding:1px 6px; border-radius:4px;
-    border:1px solid var(--line); color:var(--dim); margin-right:6px; vertical-align:1px;
+  .episode-bl{left:0; bottom:0; padding:10px 22px 8px; font-size:15px;
+    border-top:4px solid var(--ink); border-right:4px solid var(--ink)}
+  .episode-tr{right:0; top:0; padding:8px 18px; font-size:14px;
+    border-left:3px solid var(--ink); border-bottom:3px solid var(--ink)}
+
+  /* ── 版面分欄 ─────────────────────────── */
+  .cols{display:grid; grid-template-columns:1.5fr 1fr; gap:16px; margin-top:16px; align-items:start}
+  @media (max-width:980px){
+    .cols{grid-template-columns:1fr}
+    .hero{height:240px}
+    .masthead{flex-wrap:wrap}
+    .masthead h1{font-size:30px}
   }
-  footer{
-    margin-top:22px; background:var(--panel); border:1px solid var(--line);
-    border-radius:8px; padding:14px 18px;
+
+  /* ── 輸入格 ───────────────────────────── */
+  .inputbox{border:3px solid var(--ink); background:var(--panel)}
+  #in{
+    width:100%; min-height:240px; resize:vertical; display:block;
+    border:0; background:transparent; padding:20px 22px;
+    font:inherit; line-height:1.95; color:var(--ink); outline:none;
   }
-  footer h3{font-size:13px; margin:0 0 8px; color:var(--dim); font-weight:600}
-  footer ul{margin:0; padding-left:20px; color:var(--dim); font-size:14px}
-  footer li{margin:4px 0}
-  footer .src{margin-top:12px; font-size:12px; color:var(--dimmer)}
-  code{background:#0f1114; padding:1px 5px; border-radius:4px; font-size:13px}
+  #in::placeholder{color:#a89f8e}
+  .btnbar{display:flex; border-top:3px solid var(--ink)}
+  .btnbar button{
+    flex:1; font:inherit; font-size:13px; font-weight:700; letter-spacing:.14em;
+    padding:11px 0; border:0; cursor:pointer;
+  }
+  #sample{background:var(--panel); color:var(--ink); border-right:3px solid var(--ink)}
+  #sample:hover{background:var(--paper)}
+  #clear{background:var(--ink); color:var(--paper)}
+  #clear:hover{background:#3a352a}
+
+  /* ── 計分格（網點底）───────────────────── */
+  .statbox{
+    border:3px solid var(--ink); padding:18px 20px;
+    background:radial-gradient(var(--ink) 1px,transparent 1.2px) 0 0/8px 8px, var(--panel);
+  }
+  .counts{display:flex; align-items:flex-end; gap:18px;
+    background:var(--panel); border:3px solid var(--ink); padding:12px 16px}
+  .count{display:flex; align-items:baseline; gap:7px}
+  .count .n{font-family:var(--font-mincho); font-size:40px; line-height:1; font-weight:900}
+  .count .n.red{color:var(--red)}
+  .count .lab{font-size:11.5px; letter-spacing:.2em}
+  #meta{
+    margin-top:12px; background:var(--panel); border:3px solid var(--ink);
+    padding:8px 16px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em;
+  }
+  #meta .pass{color:var(--red); font-weight:500}
+
+  /* ── 分格通用 ─────────────────────────── */
+  .panel{border:3px solid var(--ink); background:var(--panel)}
+  .panel-h{
+    font-family:var(--font-mincho); font-size:14px; font-weight:700; letter-spacing:.18em;
+    margin:0; padding:10px 20px; border-bottom:3px solid var(--ink);
+  }
+  .panel-h.invert{background:var(--ink); color:var(--paper)}
+
+  /* ── 全文 ─────────────────────────────── */
+  #out{padding:24px 24px 28px; line-height:2.1; white-space:pre-wrap; word-break:break-word;
+    max-height:62vh; overflow:auto}
+  .empty{color:var(--dimmer); font-size:14px}
+  mark{background:transparent; color:inherit; padding:0; cursor:help}
+  mark.hard{background:linear-gradient(transparent 62%,var(--hl) 62%); border-bottom:2px solid var(--red)}
+  mark.soft{border-bottom:2px dashed var(--ink)}
+  mark.flash{background:var(--hl); box-shadow:0 0 0 3px var(--hl)}
+
+  /* ── 命中清單 ─────────────────────────── */
+  #list{max-height:52vh; overflow:auto; border-bottom:3px solid var(--ink)}
+  #list > .empty{display:block; padding:16px 18px}
+  .grp{
+    font-family:var(--font-mincho); font-size:12px; letter-spacing:.18em; color:var(--dim);
+    padding:12px 18px 5px; background:#f2ede2; border-bottom:1px dashed var(--rule);
+  }
+  .hit{padding:14px 18px; border-bottom:1px dashed var(--rule); cursor:pointer}
+  .hit:hover{background:#f2ede2}
+  .hit .head{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap}
+  .hit .w{font-family:var(--font-mincho); font-size:17px; font-weight:700}
+  .badge{font-size:10px; font-weight:700; letter-spacing:.1em; padding:1px 6px; flex:none}
+  .badge.red{background:var(--red); color:#fff}
+  .badge.ink{background:var(--ink); color:var(--paper)}
+  .badge.soft{background:transparent; color:var(--ink); border:1px solid var(--ink)}
+  .hit .tip{font-size:13px; color:var(--dim); margin-top:4px}
+  .hit .ctx{font-family:var(--font-mono); font-size:11.5px; color:var(--dimmer); margin-top:6px;
+    word-break:break-all}
+
+  /* ── 自己過一遍 ───────────────────────── */
+  .checklist-panel{margin-top:16px}
+  .checklist-panel .panel-h{font-size:15px; padding:11px 20px}
+  .checklist{display:grid; grid-template-columns:repeat(3,1fr)}
+  @media (max-width:980px){ .checklist{grid-template-columns:1fr} }
+  .check{padding:20px 22px; border-right:1px dashed var(--rule)}
+  .check:last-child{border-right:0}
+  .check .q{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:8px}
+  .check .a{font-size:13.5px; color:var(--dim); line-height:1.9}
+
+  .colophon{margin-top:20px; font-size:12px; color:var(--dimmer); line-height:1.9}
+  .colophon code{font-family:var(--font-mono); font-size:11.5px; background:#e3dccd; padding:1px 5px}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header>
+  <header class="masthead">
     <h1>去 AI 味檢查</h1>
-    <span class="sub">貼上文字就掃，純離線、不上傳、不改字</span>
+    <div class="masthead-right">
+      <span class="tagline">貼上文字就掃・不上傳・不改字</span>
+      <div class="stamp slot">
+        <img src="assets/mark.png" alt="" onerror="this.remove()">
+        <span class="slot-hint">印章／小圖</span>
+      </div>
+      <span class="seal">校閱</span>
+    </div>
   </header>
 
-  <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）"></textarea>
-  <div class="btns">
-    <button id="sample">試試範例</button>
-    <button id="clear">清空</button>
+  <div class="hero slot">
+    <img src="assets/hero.png" alt="" onerror="this.remove()">
+    <span class="slot-hint">橫幅滿版圖片（建議 2400×820）</span>
+    <div class="episode episode-bl">第一話　把字貼進來</div>
   </div>
 
-  <div class="bar">
-    <span class="score" id="score">等著你貼東西進來</span>
-    <span class="meta" id="meta"></span>
+  <div class="cols">
+    <div class="inputbox">
+      <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）"></textarea>
+      <div class="btnbar">
+        <button id="sample">試試範例</button>
+        <button id="clear">清空</button>
+      </div>
+    </div>
+    <div class="statbox">
+      <div class="counts">
+        <div class="count"><span class="n red" id="hardN">0</span><span class="lab">硬命中</span></div>
+        <div class="count"><span class="n" id="softN">0</span><span class="lab">軟命中</span></div>
+      </div>
+      <div id="meta">等著你貼東西進來</div>
+      <div class="side slot">
+        <img src="assets/side.png" alt="" onerror="this.remove()">
+        <span class="slot-hint">小插圖：橫向 4:3</span>
+      </div>
+    </div>
   </div>
 
   <div class="cols">
     <section class="panel">
-      <h2>全文（命中處畫底線，滑鼠移上去看改法）</h2>
+      <h2 class="panel-h invert">全文　命中處畫底線</h2>
       <div id="out"><span class="empty">還沒有內容。</span></div>
     </section>
     <section class="panel">
-      <h2>命中清單（點一筆跳到位置）</h2>
+      <h2 class="panel-h">命中清單　點一筆跳到位置</h2>
       <div id="list"><span class="empty">還沒有內容。</span></div>
+      <div class="portrait slot">
+        <img src="assets/portrait.png" alt="" onerror="this.remove()">
+        <span class="slot-hint">直式人物分格：3:4</span>
+      </div>
     </section>
   </div>
 
-  <footer>
-    <h3>正則抓不到的，交付前自己過一遍</h3>
-    <ul>
-      <li><b>能不能拍成電影？</b>有溫度、氣味、畫面、動作才是真寫作；拍不出來就是 AI 味。</li>
-      <li><b>唸出聲會不會像作文範本？</b>太順、太對稱、太工整就重寫。句子要有長有短。</li>
-      <li><b>看得到「誰」嗎？</b>寫得出阿芳穿藍外套喝冰美式，而不是「一位朋友」。</li>
-      <li><b>具體錨點是真的嗎？</b>不能為了具體而編故事；匿名化的客戶情境要標「示意」。</li>
-    </ul>
-    <div class="src">
-      規則複製自 <code>D:\qkangber\scripts\check-ai-style.mjs</code>（43 條），來源文件
-      <code>D:\qkangber\docs\anti-ai-style.md</code>。那邊改了規則，回來覆蓋本檔 <code>&lt;script&gt;</code> 最上方的 RULES 區塊。
+  <div class="strip slot">
+    <img src="assets/strip.png" alt="" onerror="this.remove()">
+    <span class="slot-hint">橫幅插頁：超寬 6:1</span>
+  </div>
+
+  <section class="panel checklist-panel">
+    <h2 class="panel-h">正則抓不到的，交付前自己過一遍</h2>
+    <div class="checklist">
+      <div class="check">
+        <div class="q">能不能拍成電影？</div>
+        <div class="a">有溫度、氣味、畫面、動作才是真寫作；拍不出來就是 AI 味。</div>
+      </div>
+      <div class="check">
+        <div class="q">唸出聲會不會像作文範本？</div>
+        <div class="a">太順、太對稱、太工整就重寫。句子要有長有短。</div>
+      </div>
+      <div class="check">
+        <div class="q">看得到「誰」嗎？</div>
+        <div class="a">寫得出阿芳穿藍外套喝冰美式，而不是「一位朋友」。</div>
+      </div>
+      <div class="check">
+        <div class="q">具體錨點是真的嗎？</div>
+        <div class="a">不能為了具體而編故事；匿名化的客戶情境要標「示意」。</div>
+      </div>
     </div>
-  </footer>
+  </section>
+
+  <div class="colophon">
+    規則複製自 <code>D:\qkangber\scripts\check-ai-style.mjs</code>（43 條），來源文件
+    <code>D:\qkangber\docs\anti-ai-style.md</code>。那邊改了規則，回來覆蓋本檔 <code>&lt;script&gt;</code> 最上方的 RULES 區塊。
+  </div>
 
 </div>
-
 <script>
 // ============================================================
 // ===== 規則從這裡開始（對應 check-ai-style.mjs 的 RULES）=====
@@ -200,12 +317,14 @@ const RULES = [
 // ===== 規則到這裡結束 =====
 
 const CAT_ORDER = ["A", "B", "C", "D", "E", "F", "風"];
-const CAT_CLASS = { A:"A", B:"B", C:"C", D:"D", E:"E", F:"F", 風:"X" };
+// 墨線版：類別徽章兩色輪替（A 朱紅／B 墨／C 朱紅…），軟命中改外框
+const CAT_TONE = { A:"red", B:"ink", C:"red", D:"ink", E:"red", F:"ink", 風:"ink" };
 
 const $in = document.getElementById("in");
 const $out = document.getElementById("out");
 const $list = document.getElementById("list");
-const $score = document.getElementById("score");
+const $hardN = document.getElementById("hardN");
+const $softN = document.getElementById("softN");
 const $meta = document.getElementById("meta");
 
 function esc(s) {
@@ -313,35 +432,31 @@ function render(raw) {
   if (!raw.trim()) {
     $out.innerHTML = '<span class="empty">還沒有內容。</span>';
     $list.innerHTML = '<span class="empty">還沒有內容。</span>';
-    $score.textContent = "等著你貼東西進來";
-    $score.className = "score";
-    $meta.textContent = "";
+    $hardN.textContent = "0";
+    $softN.textContent = "0";
+    $meta.textContent = "等著你貼東西進來";
     return;
   }
 
   const { plain, hits, marks, tagged } = scan(raw);
   const hard = hits.filter(h => !h.soft).length;
   const soft = hits.length - hard;
+  const chars = plain.replace(/\s/g, "").length;
 
-  // 計分條
-  if (hits.length === 0) {
-    $score.innerHTML = '<span class="ok">✓ 通過，沒有命中黑名單</span>';
-  } else {
-    const parts = [];
-    if (hard) parts.push('<span class="bad">命中 <span class="n">' + hard + '</span> 處</span>');
-    if (soft) parts.push('<span class="warn">待確認 <span class="n">' + soft + '</span> 處</span>');
-    $score.innerHTML = parts.join('　／　');
-  }
-  $meta.textContent = plain.replace(/\s/g, "").length + " 字"
+  // 計分格：硬命中／軟命中兩個大字，下面一條 meta
+  $hardN.textContent = hard;
+  $softN.textContent = soft;
+  $meta.innerHTML = (hits.length === 0 ? '<span class="pass">✓ 通過，沒有命中黑名單</span>　／　' : "")
+    + chars + " 字"
     + (tagged ? "（已去除 HTML 標籤）" : "")
-    + "　總計 " + hits.length + " 處";
+    + "　／　總計 " + hits.length + " 處";
 
-  // 全文標紅
+  // 全文標記：硬命中畫朱紅底線＋淡紅螢光，軟命中畫墨色虛線
   let html = "", cur = 0;
   for (const mk of marks) {
     html += esc(plain.slice(cur, mk.start));
-    const cls = "c" + (CAT_CLASS[mk.cat.charAt(0)] || "X") + (mk.soft ? " soft" : "");
-    html += '<mark class="' + cls + '" id="mk' + mk.markIndex + '" title="' + esc(mk.cat + "：" + mk.tip) + '">'
+    html += '<mark class="' + (mk.soft ? "soft" : "hard") + '" id="mk' + mk.markIndex + '" '
+          + 'title="' + esc(mk.cat + "：" + mk.tip) + '">'
           + esc(plain.slice(mk.start, mk.end)) + "</mark>";
     cur = mk.end;
   }
@@ -366,12 +481,15 @@ function render(raw) {
   let out = "";
   for (const cat of cats) {
     const arr = groups.get(cat);
+    const tone = CAT_TONE[cat.charAt(0)] || "ink";
     out += '<div class="grp">' + esc(cat) + "（" + arr.length + "）</div>";
     for (const h of arr) {
-      const g = h.soft ? "gsoft" : "g" + (CAT_CLASS[cat.charAt(0)] || "X");
-      out += '<div class="hit ' + g + '" data-mk="' + (h.markIndex === undefined ? "" : h.markIndex) + '">'
-        + '<div>' + (h.soft ? '<span class="tag">待確認</span>' : "")
-        + '<span class="w">「' + esc(h.word) + '」</span></div>'
+      out += '<div class="hit" data-mk="' + (h.markIndex === undefined ? "" : h.markIndex) + '">'
+        + '<div class="head">'
+        + '<span class="w">「' + esc(h.word) + '」</span>'
+        + '<span class="badge ' + (h.soft ? "soft" : tone) + '">' + esc(cat.charAt(0)) + "</span>"
+        + (h.soft ? '<span class="badge soft">待確認</span>' : "")
+        + "</div>"
         + '<div class="tip">' + esc(h.tip) + "</div>"
         + '<div class="ctx">…' + esc(h.ctx) + "…</div>"
         + "</div>";
