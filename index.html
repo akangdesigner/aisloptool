@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>去 AI 味檢查</title>
+<title>校稿王 — 去 AI 味檢查</title>
+<link rel="icon" href="brand/mark/mark-64.png">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --paper:#efe9dd;   /* 紙面底色 */
@@ -21,6 +23,7 @@
     --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   body{
     margin:0; background:var(--paper); color:var(--ink);
     font-family:var(--font-ui); font-size:15px; line-height:1.85;
@@ -33,19 +36,45 @@
   /* ── 刊頭 ─────────────────────────────── */
   .masthead{
     display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
-    border-bottom:4px solid var(--ink); padding-bottom:12px;
+    border-bottom:4px solid var(--ink); padding-bottom:12px; flex-wrap:wrap;
   }
-  .masthead h1{
-    font-family:var(--font-mincho); font-size:38px; font-weight:900;
-    letter-spacing:.08em; margin:0;
-  }
-  .masthead-right{display:flex; align-items:center; gap:14px; padding-bottom:6px}
-  .tagline{font-size:12.5px; letter-spacing:.2em; color:var(--dim)}
-  .stamp{width:118px; height:118px; border:3px solid var(--ink); flex:none}
+  /* 刊頭品牌：橫式 lockup（章＋字標），最小顯示高度 32px */
+  .masthead h1{margin:0; line-height:0}
+  .masthead h1 img{display:block; height:52px; width:auto}
+  .masthead-right{display:flex; align-items:center; gap:12px; padding-bottom:6px}
+  .tagline{font-size:12.5px; letter-spacing:.2em; color:var(--dim); white-space:nowrap}
+  .stamp{width:56px; height:56px; border:3px solid var(--ink); flex:none}
   .seal{
     font-family:var(--font-mincho); font-size:13px; font-weight:700; color:#fff;
     background:var(--red); padding:5px 9px; letter-spacing:.14em;
   }
+  .whoami{
+    display:flex; align-items:center; gap:8px; max-width:280px;
+    font-size:12px; color:var(--dim); white-space:nowrap;
+  }
+  .whoami img{width:26px; height:26px; flex:none; border:2px solid var(--ink); object-fit:cover}
+  .whoami .who-t{overflow:hidden; text-overflow:ellipsis}
+  .signout{font-size:12px; letter-spacing:.1em; color:var(--dimmer); text-decoration:none}
+  .signout:hover{color:var(--ink)}
+
+  /* ── 導覽列 ───────────────────────────── */
+  .nav{
+    display:flex; flex-wrap:wrap;
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+    border-bottom:3px solid var(--ink);
+  }
+  .nav a{
+    flex:1; min-width:110px; text-align:center; text-decoration:none;
+    font-size:13.5px; font-weight:700; letter-spacing:.14em; padding:12px 0;
+    background:var(--panel); color:var(--ink); border-right:1px dashed var(--rule);
+  }
+  .nav a:last-child{border-right:0}
+  .nav a:hover{background:var(--paper); color:var(--ink)}
+  .nav a.on{background:var(--ink); color:var(--paper)}
+
+  /* ── 頁面切換 ─────────────────────────── */
+  .page{display:none}
+  .page.on{display:block}
 
   /* ── 圖片分格：把圖丟進 assets/ 就會蓋掉提示 ── */
   .slot{
@@ -58,7 +87,7 @@
     text-align:center; padding:10px; font-family:var(--font-mincho); font-size:13px;
     letter-spacing:.14em; color:#7d7566;
   }
-  .hero{width:100%; height:400px; border:4px solid var(--ink); border-top:0}
+  .hero{width:100%; height:340px; border:3px solid var(--ink); border-top:0}
   .strip{margin-top:16px; aspect-ratio:2172/724; border:3px solid var(--ink)}
   .side{margin-top:12px; aspect-ratio:4/3; border:3px solid var(--ink)}
   .portrait{height:300px}
@@ -68,22 +97,57 @@
   }
   .episode-bl{left:0; bottom:0; padding:10px 22px 8px; font-size:15px;
     border-top:4px solid var(--ink); border-right:4px solid var(--ink)}
-  .episode-tr{right:0; top:0; padding:8px 18px; font-size:14px;
-    border-left:3px solid var(--ink); border-bottom:3px solid var(--ink)}
 
   /* ── 版面分欄 ─────────────────────────── */
   .cols{display:grid; grid-template-columns:1.5fr 1fr; gap:16px; margin-top:16px; align-items:start}
+  .cols > *{min-width:0}
   @media (max-width:980px){
     .cols{grid-template-columns:1fr}
     .hero{height:240px}
-    .masthead{flex-wrap:wrap}
-    .masthead h1{font-size:30px}
+    .masthead h1 img{height:38px}
   }
+
+  /* ── 通用按鈕 ─────────────────────────── */
+  .btn{
+    display:inline-block; text-align:center; text-decoration:none; cursor:pointer;
+    font-family:inherit; font-size:13px; font-weight:700; letter-spacing:.14em;
+    padding:12px 22px; border:0;
+  }
+  .btn.solid{background:var(--ink); color:var(--paper)}
+  .btn.solid:hover{background:#3a352a; color:var(--paper)}
+  .btn.ghost{background:var(--panel); color:var(--ink); border:3px solid var(--ink)}
+  .btn.ghost:hover{background:var(--paper); color:var(--ink)}
+  .btn.block{display:block; width:100%; padding:11px 0}
+  .btn-row{display:flex; gap:12px; flex-wrap:wrap}
+
+  /* ── 首頁：標語格 ─────────────────────── */
+  .lede{border:3px solid var(--ink); background:var(--panel); padding:26px 28px}
+  .lede h2{
+    font-family:var(--font-mincho); font-size:30px; font-weight:900;
+    line-height:1.5; margin:0 0 12px; text-wrap:pretty;
+  }
+  .lede p{margin:0 0 20px; font-size:15.5px; color:var(--dim); text-wrap:pretty}
+
+  .howto-box{
+    border:3px solid var(--ink); padding:18px 20px;
+    background:radial-gradient(var(--ink) 1px,transparent 1.2px) 0 0/8px 8px, var(--panel);
+  }
+  .howto{background:var(--panel); border:3px solid var(--ink); padding:16px 18px}
+  .howto .t{font-family:var(--font-mincho); font-size:13px; letter-spacing:.18em;
+    color:var(--dim); margin-bottom:10px}
+  .howto ol{margin:0; padding-left:1.4em; font-size:14.5px; line-height:2}
+
+  /* ── 六類規則 ─────────────────────────── */
+  .rules6{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .rules6 .r{padding:18px 20px; border-right:1px dashed var(--rule)}
+  .rules6 .r:last-child{border-right:0}
+  .rules6 .r .n{font-family:var(--font-mincho); font-size:17px; font-weight:700}
+  .rules6 .r .d{font-size:13px; color:var(--dim)}
 
   /* ── 輸入格 ───────────────────────────── */
   .inputbox{border:3px solid var(--ink); background:var(--panel)}
   #in{
-    width:100%; min-height:240px; resize:vertical; display:block;
+    width:100%; min-height:220px; resize:vertical; display:block;
     border:0; background:transparent; padding:20px 22px;
     font:inherit; line-height:1.95; color:var(--ink); outline:none;
   }
@@ -106,9 +170,9 @@
   .counts{display:flex; align-items:flex-end; gap:18px;
     background:var(--panel); border:3px solid var(--ink); padding:12px 16px}
   .count{display:flex; align-items:baseline; gap:7px}
-  .count .n{font-family:var(--font-mincho); font-size:40px; line-height:1; font-weight:900}
+  .count .n{font-family:var(--font-mincho); font-size:38px; line-height:1; font-weight:900}
   .count .n.red{color:var(--red)}
-  .count .lab{font-size:11.5px; letter-spacing:.2em}
+  .count .lab{font-size:11.5px; letter-spacing:.2em; white-space:nowrap}
   #meta{
     margin-top:12px; background:var(--panel); border:3px solid var(--ink);
     padding:8px 16px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em;
@@ -122,6 +186,12 @@
     margin:0; padding:10px 20px; border-bottom:3px solid var(--ink);
   }
   .panel-h.invert{background:var(--ink); color:var(--paper)}
+  .page-head{
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+    border-bottom:3px solid var(--ink); background:var(--panel); padding:22px 24px;
+  }
+  .page-head h2{font-family:var(--font-mincho); font-size:26px; font-weight:900; margin:0 0 6px}
+  .page-head p{margin:0; font-size:14.5px; color:var(--dim)}
 
   /* ── 全文 ─────────────────────────────── */
   #out{padding:24px 24px 28px; line-height:2.1; white-space:pre-wrap; word-break:break-word;
@@ -154,104 +224,625 @@
   /* ── 自己過一遍 ───────────────────────── */
   .checklist-panel{margin-top:16px}
   .checklist-panel .panel-h{font-size:15px; padding:11px 20px}
-  .checklist{display:grid; grid-template-columns:repeat(3,1fr)}
-  @media (max-width:980px){ .checklist{grid-template-columns:1fr} }
+  .checklist{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
   .check{padding:20px 22px; border-right:1px dashed var(--rule)}
   .check:last-child{border-right:0}
   .check .q{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:8px}
   .check .a{font-size:13.5px; color:var(--dim); line-height:1.9}
 
+  /* ── 訂閱方案 ─────────────────────────── */
+  .plans{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:16px; margin-top:16px; align-items:start}
+  .plan{border:3px solid var(--ink); background:var(--panel); min-width:0}
+  .plan.hot{
+    background:radial-gradient(var(--rule) 1px,transparent 1.4px) 0 0/7px 7px, var(--panel);
+    outline:3px solid var(--ink); outline-offset:3px;
+  }
+  .plan h3{
+    font-family:var(--font-mincho); font-size:20px; font-weight:700; letter-spacing:.1em;
+    margin:0; padding:12px 20px; border-bottom:3px solid var(--ink);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .plan .tag{font-size:11px; font-weight:700; letter-spacing:.14em;
+    color:#fff; background:var(--red); padding:3px 8px}
+  .plan-body{padding:20px}
+  .price{font-family:var(--font-mincho); font-size:40px; font-weight:900; line-height:1}
+  .price-sub{font-size:12px; letter-spacing:.16em; color:var(--dim); margin-bottom:16px}
+  .plan ul{margin:0 0 18px; padding-left:1.3em; font-size:14px; line-height:2; color:var(--dim)}
+  .note{margin-top:16px; font-size:12.5px; color:var(--dimmer)}
+
+  /* ── 結帳 ─────────────────────────────── */
+  .checkout{
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+    border-bottom:3px solid var(--ink); padding:48px 32px 56px;
+    background:radial-gradient(#d8d0be 1px,transparent 1.4px) 0 0/9px 9px, var(--paper);
+  }
+  .checkout-head{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:30px}
+  .checkout-head h2{font-family:var(--font-mincho); font-size:36px; font-weight:900;
+    letter-spacing:.1em; margin:0; transform:rotate(-1.2deg)}
+  .checkout-head .sub{font-family:var(--font-mincho); font-size:13px; letter-spacing:.2em;
+    color:var(--dim); padding-bottom:8px}
+  .checkout-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:30px; align-items:start}
+  .card-form{position:relative; background:var(--panel); padding:32px 28px 30px;
+    transform:rotate(-.7deg); min-width:0}
+  .tag-red{
+    position:absolute; top:-11px; left:26px; background:var(--red); color:#fff;
+    font-family:var(--font-mincho); font-size:12px; font-weight:700; letter-spacing:.24em;
+    padding:4px 16px; transform:rotate(-2deg);
+  }
+  .fields{display:flex; flex-direction:column; gap:22px; margin-top:6px}
+  .field{display:block}
+  .field .lab{display:block; font-size:12px; letter-spacing:.16em;
+    color:var(--dimmer); margin-bottom:2px}
+  .field .lab .req{color:var(--red); margin-left:3px}
+  .field input:invalid:not(:placeholder-shown){border-bottom:1px solid var(--red)}
+  .field input, .field select, .field textarea{
+    width:100%; font-family:inherit; font-size:16px; color:var(--ink); outline:none;
+    padding:8px 0; border:0; border-bottom:1px solid var(--rule); background:transparent;
+  }
+  .field input.mono{font-family:var(--font-mono)}
+  .field input:focus, .field select:focus{border-bottom:1px solid var(--red)}
+  .field-row{display:flex; gap:18px}
+  .field-row .field{flex:1; min-width:0}
+
+  .bill-col{position:relative; transform:rotate(.8deg); min-width:0}
+  .bill{background:var(--ink); color:var(--paper); padding:26px 28px}
+  .bill .t{font-family:var(--font-mincho); font-size:12px; letter-spacing:.26em;
+    color:var(--rule); margin-bottom:12px}
+  .bill-row{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+  .bill-row.top{padding-bottom:10px; border-bottom:1px dashed var(--dim)}
+  .bill-row.mid{padding:10px 0 14px; color:var(--rule)}
+  .bill-row .num{font-family:var(--font-mono); font-size:14px; flex:none; white-space:nowrap}
+  .bill-row .cap{font-family:var(--font-mincho); font-size:13px; letter-spacing:.2em}
+  .bill-row .total{font-family:var(--font-mincho); font-size:38px; font-weight:900; line-height:1}
+  .pay-btn{
+    display:block; width:100%; margin-top:16px; text-align:center; text-decoration:none;
+    font-family:var(--font-mincho); font-size:17px; font-weight:700; letter-spacing:.3em;
+    padding:16px 0; border:0; cursor:pointer; background:var(--red); color:#fff;
+  }
+  .pay-btn:hover{background:var(--ink); color:var(--paper)}
+  .assure{display:flex; align-items:flex-start; gap:14px; margin-top:20px}
+  .seal-round{
+    flex:none; display:flex; align-items:center; justify-content:center;
+    width:64px; height:64px; transform:rotate(7deg); border:2px solid var(--red);
+    color:var(--red); font-family:var(--font-mincho); font-size:14px; font-weight:700;
+    line-height:1.2; text-align:center;
+  }
+  .assure span{font-size:12.5px; color:var(--dim)}
+
+  /* ── 感謝頁 ───────────────────────────── */
+  .thanks{
+    position:relative; overflow:hidden; min-height:620px;
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+    border-bottom:3px solid var(--ink);
+    display:grid; grid-template-columns:1fr 1fr; align-items:center;
+    background:radial-gradient(var(--rule) 1px,transparent 1.4px) 0 0/7px 7px, var(--tone);
+  }
+  .thanks > img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0}
+  .thanks .veil{position:absolute; inset:0; z-index:1;
+    background:linear-gradient(90deg,rgba(239,233,221,0) 30%,rgba(239,233,221,.94) 52%,var(--paper) 66%)}
+  .thanks .body{position:relative; z-index:2; padding:48px 40px 48px 20px; max-width:520px}
+  .thanks .ok{font-family:var(--font-mincho); font-size:13px; letter-spacing:.24em;
+    color:var(--red); margin-bottom:14px}
+  .thanks h2{font-family:var(--font-mincho); font-size:46px; font-weight:900;
+    line-height:1.3; margin:0 0 14px; text-wrap:pretty}
+  .thanks p{margin:0 0 8px; font-size:16px; text-wrap:pretty}
+  .thanks p.small{margin-bottom:30px; font-size:14px; color:var(--dim)}
+  @media (max-width:980px){
+    .thanks{grid-template-columns:1fr; min-height:0}
+    .thanks .veil{background:linear-gradient(180deg,rgba(239,233,221,.3) 0,rgba(239,233,221,.96) 40%,var(--paper) 60%)}
+    .thanks .body{padding:120px 24px 40px}
+    .thanks h2{font-size:34px}
+  }
+
+  /* ── 聯絡我們 ─────────────────────────── */
+  .contact{
+    display:grid; grid-template-columns:1fr 1.05fr; gap:28px; align-items:start;
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+    border-bottom:3px solid var(--ink); background:var(--panel); padding:44px 32px 40px;
+  }
+  .contact > *{min-width:0}
+  @media (max-width:980px){ .contact{grid-template-columns:1fr} }
+  .kicker{display:inline-block; font-family:var(--font-mincho); font-size:12.5px;
+    font-weight:700; letter-spacing:.2em; padding:5px 12px;
+    border:3px solid var(--ink); margin-bottom:20px}
+  .contact h2{font-family:var(--font-mincho); font-size:40px; font-weight:900;
+    line-height:1.35; margin:0 0 16px; text-wrap:pretty}
+  .contact .lead{margin:0 0 28px; font-size:15.5px; color:var(--dim); max-width:34em}
+  .kv{border-top:1px dashed var(--rule)}
+  .kv .row{display:flex; gap:16px; align-items:baseline;
+    padding:16px 0; border-bottom:1px dashed var(--rule)}
+  .kv .k{flex:none; width:82px; font-size:12px; letter-spacing:.16em; color:var(--dimmer)}
+  .kv .v{font-family:var(--font-mincho); font-size:19px; font-weight:700; word-break:break-all}
+  .to-faq{margin-top:24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .to-faq span{font-size:13.5px; color:var(--dim)}
+  .form-panel{border:3px solid var(--ink); background:#fff}
+  .form-body{padding:24px; display:flex; flex-direction:column; gap:16px}
+  .form-body .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .form-body label{display:flex; flex-direction:column; gap:6px; min-width:0}
+  .form-body .lab{font-size:12px; letter-spacing:.16em; color:var(--dim)}
+  .form-body .req{color:var(--red)}
+  .form-body input, .form-body select, .form-body textarea{
+    font-family:inherit; font-size:15px; padding:11px 14px;
+    border:3px solid var(--ink); background:var(--panel); color:var(--ink);
+    outline:none; min-width:0;
+  }
+  .form-body textarea{line-height:1.9; min-height:150px; resize:vertical}
+  .form-body button{align-self:flex-start; font-family:inherit; font-size:13.5px;
+    font-weight:700; letter-spacing:.16em; padding:12px 28px; border:0;
+    cursor:pointer; background:var(--ink); color:var(--paper)}
+  .form-body button:hover{background:#3a352a}
+  #contactMsg{font-size:13px; color:var(--red)}
+
+  /* ── 常見問題 ─────────────────────────── */
+  .faq{border:3px solid var(--ink); background:var(--panel); margin-top:16px}
+  .faq .item{padding:22px 24px; border-bottom:1px dashed var(--rule)}
+  .faq .item:last-child{border-bottom:0}
+  .faq .q{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:6px}
+  .faq .a{font-size:14.5px; color:var(--dim); text-wrap:pretty}
+
+  /* ── 登入 ─────────────────────────────── */
+  .login-wrap{
+    position:relative; overflow:hidden; display:flex; justify-content:center;
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+    border-bottom:3px solid var(--ink); padding:64px 28px 72px;
+    background:radial-gradient(#d8d0be 1px,transparent 1.4px) 0 0/9px 9px, var(--paper);
+  }
+  .login-wrap > img{position:absolute; left:0; right:0; bottom:0;
+    width:100%; height:46%; object-fit:cover; opacity:.28; z-index:0}
+  .login-card{position:relative; z-index:1; width:100%; max-width:420px;
+    background:var(--panel); padding:36px 32px 30px}
+  .login-logo{display:block; height:104px; width:auto; margin:0 0 22px}
+  .login-card .kick{font-family:var(--font-mincho); font-size:12px; letter-spacing:.26em;
+    color:var(--red); margin-bottom:10px}
+  .login-card h2{font-family:var(--font-mincho); font-size:30px; font-weight:900;
+    line-height:1.35; margin:0 0 6px}
+  .login-card .lead{margin:0 0 28px; font-size:13.5px; color:var(--dim)}
+  .login-btn{
+    display:block; width:100%; margin-top:26px; text-align:center; text-decoration:none;
+    font-family:var(--font-mincho); font-size:16px; font-weight:700; letter-spacing:.3em;
+    padding:14px 0; border:0; cursor:pointer; background:var(--red); color:#fff;
+  }
+  .login-btn:hover{background:var(--ink); color:var(--paper)}
+  .or{display:flex; align-items:center; gap:12px; margin:22px 0 18px}
+  .or span.line{flex:1; height:1px; background:var(--rule)}
+  .or span.w{font-family:var(--font-mincho); font-size:11.5px;
+    letter-spacing:.24em; color:var(--dimmer)}
+  .google-btn{
+    display:flex; width:100%; align-items:center; justify-content:center; gap:10px;
+    text-decoration:none; font-family:inherit; font-size:14px; font-weight:700;
+    letter-spacing:.06em; padding:12px 0; border:2px solid var(--ink);
+    cursor:pointer; background:transparent; color:var(--ink);
+  }
+  .google-btn:hover{background:var(--paper); color:var(--ink)}
+  .google-btn .g{font-family:var(--font-mincho); font-size:15px; font-weight:700;
+    letter-spacing:.08em; border:1px solid var(--ink); padding:1px 8px}
+  .login-msg{margin-top:14px; font-size:13px; line-height:1.7; color:var(--red)}
+  .login-foot{margin-top:20px; display:flex; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; font-size:12.5px; color:var(--dimmer)}
+
+  /* ── 頁尾 ─────────────────────────────── */
   .colophon{margin-top:20px; font-size:12px; color:var(--dimmer); line-height:1.9}
   .colophon code{font-family:var(--font-mono); font-size:11.5px; background:#e3dccd; padding:1px 5px}
+  .footer{margin-top:24px; padding-top:14px; border-top:3px solid var(--ink);
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    font-size:12px; color:var(--dimmer)}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <header class="masthead">
-    <h1>去 AI 味檢查</h1>
+    <h1><img src="brand/lockup/lockup-horizontal.png" alt="校稿王"></h1>
     <div class="masthead-right">
       <span class="tagline">貼上文字就掃・不上傳・不改字</span>
-      <div class="stamp slot">
-        <img src="assets/mark.png" alt="" onerror="this.remove()">
-        <span class="slot-hint">印章／小圖</span>
-      </div>
       <span class="seal">校閱</span>
+      <span class="whoami" id="whoami" hidden>
+        <img id="whoamiPic" alt="" onerror="this.remove()">
+        <span class="who-t" id="whoamiText"></span>
+      </span>
+      <a class="signout" href="#" id="doLogout" hidden>登出</a>
     </div>
   </header>
 
-  <div class="hero slot">
-    <img src="assets/hero.png" alt="" onerror="this.remove()">
-    <span class="slot-hint">橫幅滿版圖片（建議 2400×820）</span>
-    <div class="episode episode-bl">第一話　把字貼進來</div>
-  </div>
+  <nav class="nav" id="nav" hidden>
+    <a href="#home">首頁</a>
+    <a href="#plans">訂閱方案</a>
+    <a href="#contact">聯絡我們</a>
+    <a href="#faq">常見問題</a>
+  </nav>
 
-  <div class="cols">
-    <div class="inputbox">
-      <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）"></textarea>
-      <div class="btnbar">
-        <button id="sample">試試範例</button>
-        <button id="clear">清空</button>
-      </div>
-    </div>
-    <div class="statbox">
-      <div class="counts">
-        <div class="count"><span class="n red" id="hardN">0</span><span class="lab">硬命中</span></div>
-        <div class="count"><span class="n" id="softN">0</span><span class="lab">軟命中</span></div>
-      </div>
-      <div id="meta">等著你貼東西進來</div>
-      <div class="side slot">
-        <img src="assets/side.png" alt="" onerror="this.remove()">
-        <span class="slot-hint">小插圖：橫向 4:3</span>
-      </div>
-    </div>
-  </div>
+  <!-- ═══ 首頁 ═══════════════════════════════════════════ -->
+  <div class="page" id="page-home">
 
-  <div class="cols">
-    <section class="panel">
-      <h2 class="panel-h invert">全文　命中處畫底線</h2>
-      <div id="out"><span class="empty">還沒有內容。</span></div>
+    <div class="hero slot">
+      <img src="assets/hero.png" alt="" onerror="this.remove()">
+      <span class="slot-hint">橫幅滿版圖片（建議 2400×820）</span>
+      <div class="episode episode-bl">第一話　把字貼進來</div>
+    </div>
+
+    <div class="cols">
+      <section class="lede">
+        <h2>貼上文字，標出中文 AI 腔。</h2>
+        <p>43 條規則分六類，畫底線、寫改法。不上傳、不呼叫 API、不改字。改字還是人來。</p>
+        <div class="btn-row">
+          <a class="btn solid" href="#plans">看訂閱方案</a>
+          <button class="btn ghost" id="tryOne" type="button">先試一段</button>
+        </div>
+      </section>
+
+      <section class="howto-box">
+        <div class="howto">
+          <div class="t">三秒說明</div>
+          <ol>
+            <li>貼上一段文字</li>
+            <li>命中處畫底線，滑鼠移上去看改法</li>
+            <li>自己改，工具不動你的字</li>
+          </ol>
+        </div>
+        <div class="side slot">
+          <img src="assets/side.png" alt="" onerror="this.remove()">
+          <span class="slot-hint">小插圖：橫向 4:3</span>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:16px">
+      <h2 class="panel-h" style="font-size:15px;padding:11px 20px">六類規則</h2>
+      <div class="rules6">
+        <div class="r"><div class="n">A 灌水開頭</div><div class="d">直接講下一件事</div></div>
+        <div class="r"><div class="n">B 浮誇強調</div><div class="d">用數字或後果代替</div></div>
+        <div class="r"><div class="n">C 情緒假詞</div><div class="d">裝熟空話</div></div>
+        <div class="r"><div class="n">D AI句型</div><div class="d">工整反轉金句</div></div>
+        <div class="r"><div class="n">E 格式殘留</div><div class="d">歸因要指名</div></div>
+        <div class="r"><div class="n">F 抽象化</div><div class="d">換具體數字</div></div>
+      </div>
     </section>
-    <section class="panel">
-      <h2 class="panel-h">命中清單　點一筆跳到位置</h2>
-      <div id="list"><span class="empty">還沒有內容。</span></div>
-      <div class="portrait slot">
-        <img src="assets/portrait.png" alt="" onerror="this.remove()">
-        <span class="slot-hint">直式人物分格：3:4</span>
+
+    <div class="cols">
+      <div class="inputbox">
+        <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）"></textarea>
+        <div class="btnbar">
+          <button id="sample">試試範例</button>
+          <button id="clear">清空</button>
+        </div>
+      </div>
+      <div class="statbox">
+        <div class="counts">
+          <div class="count"><span class="n red" id="hardN">0</span><span class="lab">硬命中</span></div>
+          <div class="count"><span class="n" id="softN">0</span><span class="lab">軟命中</span></div>
+        </div>
+        <div id="meta">等著你貼東西進來</div>
+      </div>
+    </div>
+
+    <div class="cols">
+      <section class="panel">
+        <h2 class="panel-h invert">全文　命中處畫底線</h2>
+        <div id="out"><span class="empty">還沒有內容。</span></div>
+      </section>
+      <section class="panel">
+        <h2 class="panel-h">命中清單　點一筆跳到位置</h2>
+        <div id="list"><span class="empty">還沒有內容。</span></div>
+        <div class="portrait slot">
+          <img src="assets/portrait.png" alt="" onerror="this.remove()">
+          <span class="slot-hint">直式人物分格：3:4</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="strip slot">
+      <img src="assets/strip.png" alt="" onerror="this.remove()">
+      <span class="slot-hint">橫幅插頁：超寬 6:1</span>
+    </div>
+
+    <section class="panel checklist-panel">
+      <h2 class="panel-h">正則抓不到的，交付前自己過一遍</h2>
+      <div class="checklist">
+        <div class="check">
+          <div class="q">能不能拍成電影？</div>
+          <div class="a">有溫度、氣味、畫面、動作才是真寫作；拍不出來就是 AI 味。</div>
+        </div>
+        <div class="check">
+          <div class="q">唸出聲會不會像作文範本？</div>
+          <div class="a">太順、太對稱、太工整就重寫。句子要有長有短。</div>
+        </div>
+        <div class="check">
+          <div class="q">看得到「誰」嗎？</div>
+          <div class="a">寫得出阿芳穿藍外套喝冰美式，而不是「一位朋友」。</div>
+        </div>
+        <div class="check">
+          <div class="q">具體錨點是真的嗎？</div>
+          <div class="a">不能為了具體而編故事；匿名化的客戶情境要標「示意」。</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="colophon">
+      規則複製自 <code>D:\qkangber\scripts\check-ai-style.mjs</code>（43 條），來源文件
+      <code>D:\qkangber\docs\anti-ai-style.md</code>。那邊改了規則，回來覆蓋本檔 <code>&lt;script&gt;</code> 最上方的 RULES 區塊。
+    </div>
+  </div>
+
+  <!-- ═══ 訂閱方案 ═══════════════════════════════════════ -->
+  <div class="page" id="page-plans">
+    <section class="page-head">
+      <h2>訂閱方案</h2>
+      <p>三個方案，選一個。年繳兩個月免費。</p>
+    </section>
+
+    <div class="plans">
+      <section class="plan">
+        <h3>免費</h3>
+        <div class="plan-body">
+          <div class="price">NT$0</div>
+          <div class="price-sub">每月 5 次掃描</div>
+          <ul>
+            <li>43 條規則全開</li>
+            <li>單篇 2000 字上限</li>
+            <li>不留紀錄</li>
+          </ul>
+          <a class="btn ghost block" href="#home">開始使用</a>
+        </div>
+      </section>
+
+      <section class="plan hot">
+        <h3>月付<span class="tag">推薦</span></h3>
+        <div class="plan-body">
+          <div class="price">NT$180</div>
+          <div class="price-sub">每月・不限次數</div>
+          <ul>
+            <li>不限掃描次數</li>
+            <li>單篇 20000 字</li>
+            <li>自訂規則黑名單</li>
+            <li>匯出命中清單</li>
+          </ul>
+          <a class="btn solid block" href="#checkout?plan=monthly">選這個</a>
+        </div>
+      </section>
+
+      <section class="plan">
+        <h3>團隊</h3>
+        <div class="plan-body">
+          <div class="price">NT$680</div>
+          <div class="price-sub">每月・5 個座位</div>
+          <ul>
+            <li>月付全部功能</li>
+            <li>共用規則表</li>
+            <li>發票與統一編號</li>
+          </ul>
+          <a class="btn ghost block" href="#checkout?plan=team">選這個</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="note">價格未定案，數字是佔位用的。</div>
+  </div>
+
+  <!-- ═══ 結帳 ═══════════════════════════════════════════ -->
+  <div class="page" id="page-checkout">
+    <div class="checkout">
+      <div class="checkout-head">
+        <h2>結帳</h2>
+        <span class="sub">收款，只做這件事</span>
+      </div>
+
+      <div class="checkout-grid">
+        <div class="card-form">
+          <span class="tag-red">記入</span>
+          <form class="fields" id="payForm">
+            <label class="field">
+              <span class="lab">電子郵件<span class="req">＊</span></span>
+              <input type="email" id="ckEmail" placeholder="you@example.com" required>
+            </label>
+            <label class="field">
+              <span class="lab">卡號<span class="req">＊</span></span>
+              <input class="mono" id="ckCard" placeholder="0000 0000 0000 0000" inputmode="numeric" required>
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span class="lab">有效期限<span class="req">＊</span></span>
+                <input class="mono" id="ckExp" placeholder="MM / YY" required>
+              </label>
+              <label class="field">
+                <span class="lab">安全碼<span class="req">＊</span></span>
+                <input class="mono" id="ckCvc" placeholder="CVC" required>
+              </label>
+            </div>
+            <label class="field">
+              <span class="lab">統一編號（選填）</span>
+              <input class="mono" id="ckTax" placeholder="8 碼" inputmode="numeric">
+            </label>
+          </form>
+        </div>
+
+        <div class="bill-col">
+          <div class="bill">
+            <div class="t">御勘定</div>
+            <div class="bill-row top">
+              <span id="ckName" style="font-size:14.5px;flex:1;min-width:0">月付　不限次數</span>
+              <span class="num" id="ckPrice">NT$180</span>
+            </div>
+            <div class="bill-row mid">
+              <span style="font-size:14.5px">稅</span>
+              <span class="num">內含</span>
+            </div>
+            <div class="bill-row">
+              <span class="cap">今天付</span>
+              <span class="total" id="ckTotal">NT$180</span>
+            </div>
+          </div>
+
+          <!-- 接綠界時：這顆按鈕改成打後端建立訂單 + 取 CheckMacValue，再 POST 到綠界付款頁 -->
+          <button class="pay-btn" type="submit" form="payForm">付款</button>
+
+          <div class="assure">
+            <div class="seal-round">受付<br>済</div>
+            <span>刷卡由金流商處理，這頁不存卡號。隨時可取消，用到期末。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 感謝頁 ═════════════════════════════════════════ -->
+  <div class="page" id="page-thanks">
+    <div class="thanks">
+      <img src="assets/hero.png" alt="" onerror="this.remove()">
+      <div class="veil"></div>
+      <div></div>
+      <div class="body">
+        <div class="ok">✓ 付款完成</div>
+        <h2>謝謝訂閱，<br>訂單 <span id="thanksOrder">—</span></h2>
+        <p>開通信與登入連結五分鐘內寄到 <span id="thanksEmail">你的信箱</span>，電子發票一小時內。</p>
+        <p class="small">沒收到就先看垃圾信件匣，還是沒有再寫信來。</p>
+        <div class="btn-row">
+          <a class="btn solid" href="#home" style="font-size:13.5px;letter-spacing:.16em;padding:13px 26px">開始檢查</a>
+          <a class="btn ghost" href="#contact" style="font-size:13.5px;letter-spacing:.16em;padding:13px 26px">聯絡我們</a>
+        </div>
+      </div>
+      <div class="episode episode-bl">最終話　改字還是人來</div>
+    </div>
+  </div>
+
+  <!-- ═══ 聯絡我們 ═══════════════════════════════════════ -->
+  <div class="page" id="page-contact">
+    <div class="contact">
+      <div>
+        <div class="kicker">聯絡</div>
+        <h2>有問題就問，<br>我們自己回。</h2>
+        <p class="lead">沒有客服機器人。平日兩個工作日內回信。</p>
+
+        <div class="kv">
+          <div class="row"><span class="k">信箱</span><span class="v">hello@example.com</span></div>
+          <div class="row"><span class="k">回覆時間</span><span class="v">平日 2 個工作日</span></div>
+          <div class="row"><span class="k">回報誤判</span><span class="v">附上那句話就好</span></div>
+        </div>
+
+        <div class="to-faq">
+          <span>重複的問題大多在這裡答過。</span>
+          <a class="btn ghost" href="#faq" style="padding:9px 18px">常見問題</a>
+        </div>
+      </div>
+
+      <section class="form-panel">
+        <h3 class="panel-h invert">寫一封信</h3>
+        <div class="form-body">
+          <div class="grid2">
+            <label>
+              <span class="lab">姓名 <span class="req">＊</span></span>
+              <input placeholder="王小明">
+            </label>
+            <label>
+              <span class="lab">公司（選填）</span>
+              <input placeholder="公司或團隊">
+            </label>
+          </div>
+          <label>
+            <span class="lab">電子郵件 <span class="req">＊</span></span>
+            <input type="email" placeholder="you@example.com">
+          </label>
+          <label>
+            <span class="lab">想問什麼 <span class="req">＊</span></span>
+            <select>
+              <option>規則怎麼判的</option>
+              <option>方案與發票</option>
+              <option>團隊授權</option>
+              <option>回報誤判</option>
+              <option>其他</option>
+            </select>
+          </label>
+          <label>
+            <span class="lab">內容 <span class="req">＊</span></span>
+            <textarea placeholder="一句話講重點就好"></textarea>
+          </label>
+          <button type="button" id="contactSend">送出</button>
+          <div id="contactMsg"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═══ 常見問題 ═══════════════════════════════════════ -->
+  <div class="page" id="page-faq">
+    <section class="page-head">
+      <h2>常見問題</h2>
+      <p>問過的都在這裡。</p>
+    </section>
+    <section class="faq">
+      <div class="item">
+        <div class="q">文字會被上傳嗎？</div>
+        <div class="a">不會。掃描在你的瀏覽器裡跑，不呼叫 API。</div>
+      </div>
+      <div class="item">
+        <div class="q">它會幫我改字嗎？</div>
+        <div class="a">不會。它只標位置、寫改法。改字還是人來。</div>
+      </div>
+      <div class="item">
+        <div class="q">命中了一定要改？</div>
+        <div class="a">實線是該改，虛線標「待確認」，你自己判斷。</div>
+      </div>
+      <div class="item">
+        <div class="q">可以貼 HTML 嗎？</div>
+        <div class="a">可以，會先去標籤再掃。</div>
+      </div>
+      <div class="item">
+        <div class="q">誤判怎麼辦？</div>
+        <div class="a">寫信來，附上那句話。規則會改。</div>
+      </div>
+      <div class="item">
+        <div class="q">怎麼取消訂閱？</div>
+        <div class="a">帳號頁按取消，用到期末為止。</div>
       </div>
     </section>
   </div>
 
-  <div class="strip slot">
-    <img src="assets/strip.png" alt="" onerror="this.remove()">
-    <span class="slot-hint">橫幅插頁：超寬 6:1</span>
-  </div>
+  <!-- ═══ 登入 ═══════════════════════════════════════════ -->
+  <div class="page" id="page-login">
+    <div class="login-wrap">
+      <img src="assets/strip.png" alt="" onerror="this.remove()">
+      <div class="login-card">
+        <img class="login-logo" src="brand/lockup/lockup-stacked.png" alt="校稿王">
+        <div class="kick">校閱室</div>
+        <h2>登入</h2>
+        <p class="lead">登入後才會記住你的規則設定。</p>
 
-  <section class="panel checklist-panel">
-    <h2 class="panel-h">正則抓不到的，交付前自己過一遍</h2>
-    <div class="checklist">
-      <div class="check">
-        <div class="q">能不能拍成電影？</div>
-        <div class="a">有溫度、氣味、畫面、動作才是真寫作；拍不出來就是 AI 味。</div>
-      </div>
-      <div class="check">
-        <div class="q">唸出聲會不會像作文範本？</div>
-        <div class="a">太順、太對稱、太工整就重寫。句子要有長有短。</div>
-      </div>
-      <div class="check">
-        <div class="q">看得到「誰」嗎？</div>
-        <div class="a">寫得出阿芳穿藍外套喝冰美式，而不是「一位朋友」。</div>
-      </div>
-      <div class="check">
-        <div class="q">具體錨點是真的嗎？</div>
-        <div class="a">不能為了具體而編故事；匿名化的客戶情境要標「示意」。</div>
+        <div class="fields">
+          <label class="field">
+            <span class="lab">電子郵件</span>
+            <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
+          </label>
+          <label class="field">
+            <span class="lab">密碼</span>
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+          </label>
+        </div>
+
+        <button class="login-btn" type="button" id="loginEmailBtn">登入</button>
+
+        <div class="or">
+          <span class="line"></span><span class="w">或</span><span class="line"></span>
+        </div>
+
+        <button class="google-btn" type="button" id="loginGoogleBtn">
+          <span class="g">G</span>
+          <span>以 Google 帳號登入</span>
+        </button>
+
+        <div class="login-msg" id="loginMsg"></div>
+
+        <div class="login-foot">
+          <span>還沒有帳號？<a href="#plans">看方案</a></span>
+          <a href="#login">忘記密碼</a>
+        </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <div class="colophon">
-    規則複製自 <code>D:\qkangber\scripts\check-ai-style.mjs</code>（43 條），來源文件
-    <code>D:\qkangber\docs\anti-ai-style.md</code>。那邊改了規則，回來覆蓋本檔 <code>&lt;script&gt;</code> 最上方的 RULES 區塊。
+  <div class="footer">
+    <span>純前端、離線可用，不上傳、不呼叫 API、不改字。</span>
+    <span>初步架構，內容待填。</span>
   </div>
 
 </div>
@@ -520,21 +1111,176 @@ document.getElementById("clear").addEventListener("click", () => {
   $in.focus();
 });
 
-document.getElementById("sample").addEventListener("click", () => {
-  $in.value = [
-    "先誠實講，這篇會告訴你一件事。",
-    "",
-    "先搞懂這 10 款工具的分工",
-    "",
-    "值得注意的是，自動化對現代團隊至關重要，能大幅提升效率。舉個例子，我某個午後深入探討了這個問題，數字看起來相當觸目驚心。",
-    "",
-    "概念講完了，來接真的。這不是工具的問題，而是流程的問題；它不僅是一個外掛，更是一整套方法論——懂的都懂。",
-    "",
-    "**重點**：從行銷到財務，許多企業都在做這件事。簡單來說，人只要在最前面出手一次，剩下的風險都閃得掉。",
-  ].join("\n");
+const SAMPLE = [
+  "先誠實講，這篇會告訴你一件事。",
+  "",
+  "先搞懂這 10 款工具的分工",
+  "",
+  "值得注意的是，自動化對現代團隊至關重要，能大幅提升效率。舉個例子，我某個午後深入探討了這個問題，數字看起來相當觸目驚心。",
+  "",
+  "概念講完了，來接真的。這不是工具的問題，而是流程的問題；它不僅是一個外掛，更是一整套方法論——懂的都懂。",
+  "",
+  "**重點**：從行銷到財務，許多企業都在做這件事。簡單來說，人只要在最前面出手一次，剩下的風險都閃得掉。",
+].join("\n");
+
+function fillSample() {
+  $in.value = SAMPLE;
   render($in.value);
+}
+document.getElementById("sample").addEventListener("click", fillSample);
+
+// 首頁標語區的「先試一段」：填範例並捲到輸入框
+document.getElementById("tryOne").addEventListener("click", () => {
+  fillSample();
+  $in.scrollIntoView({ block: "center", behavior: "smooth" });
 });
 
+// ── 聯絡表單：還沒有後端，先給回饋 ──────────────────────
+document.getElementById("contactSend").addEventListener("click", () => {
+  document.getElementById("contactMsg").textContent =
+    "表單還沒接後端，先直接寫信到 hello@example.com。";
+});
+
+// ── Supabase Auth：Google OAuth ＋ Email 密碼 ──────────────
+// 這兩個值是公開的（publishable key 就是設計來放前端的），真正的權限靠 RLS 擋。
+const SUPABASE_URL = "https://gsusjmksxbybihqazqaz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xjPxU-KKDBCNEgTCJtjfFw_en-zR5eO";
+
+const $loginMsg = document.getElementById("loginMsg");
+let sb = null, session = null;
+
+try {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  $loginMsg.textContent = "載不到 supabase-js（CDN 連不上），登入功能需要連線。";
+}
+
+function signedIn() { return !!session; }
+function showErr(e) { $loginMsg.textContent = (e && e.message) ? e.message : String(e || ""); }
+
+if (sb) {
+  // OAuth 導回時網址帶的是 token 不是路由，supabase-js 收下 session 後把它換掉
+  sb.auth.onAuthStateChange((_event, s) => {
+    session = s;
+    if (s && !PAGES.includes(hashPage(location.hash))) {
+      history.replaceState(null, "", location.pathname + "#home");
+    }
+    route();
+  });
+
+  sb.auth.getSession().then(({ data }) => { session = data.session; route(); });
+
+  document.getElementById("loginGoogleBtn").addEventListener("click", async () => {
+    $loginMsg.textContent = "";
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: location.origin + location.pathname },
+    });
+    if (error) showErr(error);
+  });
+
+  document.getElementById("loginEmailBtn").addEventListener("click", async () => {
+    $loginMsg.textContent = "";
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    if (!email || !password) { $loginMsg.textContent = "電子郵件和密碼都要填。"; return; }
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) showErr(error);
+  });
+
+  document.getElementById("doLogout").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await sb.auth.signOut();
+    location.hash = "";
+  });
+}
+
+// ── hash 路由：#home / #plans / #contact / #faq ──
+// 未登入一律鎖在登入頁；登入頁不顯示導覽列。
+// #checkout 與 #thanks 不在導覽列裡：結帳頁只能從訂閱方案帶方案代號進來
+// （#checkout?plan=monthly），感謝頁只能從結帳頁按下付款之後到達。
+const PAGES = ["home", "plans", "checkout", "thanks", "contact", "faq", "login"];
+
+const PLAN_INFO = {
+  monthly: { name: "月付　不限次數", price: "NT$180" },
+  team:    { name: "團隊　5 個座位", price: "NT$680" },
+};
+function fillCheckout(key) {
+  const plan = PLAN_INFO[key] || PLAN_INFO.monthly;
+  document.getElementById("ckName").textContent = plan.name;
+  document.getElementById("ckPrice").textContent = plan.price;
+  document.getElementById("ckTotal").textContent = plan.price;
+}
+
+// 訂單編號按下付款才產生，存 sessionStorage 讓重新整理不會掉。
+// 接綠界之後這裡換成後端回傳的 MerchantTradeNo。
+let lastOrder = null;
+try { lastOrder = JSON.parse(sessionStorage.getItem("lastOrder") || "null"); } catch (e) {}
+
+function makeOrderNo() {
+  const d = new Date();
+  const ymd = [d.getFullYear() % 100, d.getMonth() + 1, d.getDate()]
+    .map((n) => String(n).padStart(2, "0")).join("");
+  const chars = "ACDEFGHJKLMNPQRSTUVWXY3456789";  // 拿掉會看錯的 0O1I2Z
+  let tail = "";
+  for (let i = 0; i < 4; i++) tail += chars[Math.floor(Math.random() * chars.length)];
+  return "A-" + ymd + "-" + tail;
+}
+
+document.getElementById("payForm").addEventListener("submit", (e) => {
+  e.preventDefault();  // 有欄位沒填，瀏覽器會先擋下來，走不到這行
+  lastOrder = { no: makeOrderNo(), email: document.getElementById("ckEmail").value.trim() };
+  try { sessionStorage.setItem("lastOrder", JSON.stringify(lastOrder)); } catch (err) {}
+  location.hash = "thanks";
+});
+
+function hashPage(h) { return (h || "").replace("#", "").split("?")[0]; }
+
+function route() {
+  const auth = signedIn();
+  const query = (location.hash || "").split("?")[1] || "";
+  let p = hashPage(location.hash);
+  if (!PAGES.includes(p)) p = "home";
+  if (!auth) p = "login";
+  if (p === "checkout") fillCheckout(new URLSearchParams(query).get("plan"));
+  if (p === "thanks") {
+    // 沒有訂單就代表沒付過款，直接打網址進來一律送回方案頁
+    if (!lastOrder) { p = "plans"; location.hash = "plans"; }
+    else {
+      document.getElementById("thanksOrder").textContent = lastOrder.no;
+      document.getElementById("thanksEmail").textContent = lastOrder.email || "你的信箱";
+    }
+  }
+  for (const name of PAGES) {
+    document.getElementById("page-" + name).classList.toggle("on", name === p);
+  }
+  for (const a of document.querySelectorAll(".nav a")) {
+    a.classList.toggle("on", a.getAttribute("href") === "#" + p);
+  }
+  document.getElementById("nav").hidden = !auth;
+  document.getElementById("doLogout").hidden = !auth;
+
+  // 刊頭顯示現在登入的是誰（Google 會給 full_name 和 avatar_url）
+  const who = document.getElementById("whoami");
+  if (auth) {
+    const u = session.user || {};
+    const meta = u.user_metadata || {};
+    const disp = meta.full_name || meta.name || "";
+    document.getElementById("whoamiText").textContent =
+      disp ? disp + "・" + (u.email || "") : (u.email || "已登入");
+    const pic = document.getElementById("whoamiPic");
+    if (pic) {
+      const src = meta.avatar_url || meta.picture || "";
+      if (src) pic.src = src; else pic.remove();
+    }
+  }
+  who.hidden = !auth;
+
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+
+route();
 render("");
 </script>
 </body>
