@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="app-version" content="2.0.0">
 <title>校稿王 — 去 AI 味檢查</title>
 <meta name="description" content="貼上文字，43 條規則標出中文 AI 腔用詞，畫底線、寫改法。掃描在瀏覽器裡跑，不上傳、不改字。">
 <link rel="canonical" href="https://aitool.aiqkangber.com/">
@@ -53,6 +54,10 @@
   .masthead h1 img{display:block; height:52px; width:auto}
   .masthead-right{display:flex; align-items:center; gap:12px; padding-bottom:6px}
   .tagline{font-size:12.5px; letter-spacing:.2em; color:var(--dim); white-space:nowrap}
+  .ver{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dim);
+    border:1px solid var(--ink); padding:2px 7px; white-space:nowrap;
+  }
   .stamp{width:56px; height:56px; border:3px solid var(--ink); flex:none}
   .seal{
     font-family:var(--font-mincho); font-size:13px; font-weight:700; color:#fff;
@@ -169,8 +174,77 @@
   }
   #sample{background:var(--panel); color:var(--ink); border-right:3px solid var(--ink)}
   #sample:hover{background:var(--paper)}
-  #clear{background:var(--ink); color:var(--paper)}
+  #clear{background:var(--ink); color:var(--paper); border-right:3px solid var(--ink)}
   #clear:hover{background:#3a352a}
+  #rewriteBtn{background:var(--red); color:#fff; flex:1.4}
+  #rewriteBtn:hover{background:#a5301f}
+  #rewriteBtn:disabled{background:var(--dimmer); cursor:progress}
+
+  /* ── 上傳檔案（付費版）─────────────────── */
+  .dropzone{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    border-top:3px dashed var(--ink); padding:10px 16px;
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em; color:var(--dim);
+  }
+  .dropzone b{color:var(--ink)}
+  .dropzone .pro{
+    font-family:var(--font-mincho); font-size:11px; font-weight:700; letter-spacing:.14em;
+    color:var(--red); border:1px solid var(--red); padding:1px 6px; margin-left:8px;
+  }
+  .dropzone button{
+    font:inherit; font-size:12px; font-weight:700; letter-spacing:.12em; cursor:pointer;
+    padding:6px 14px; border:2px solid var(--ink); background:var(--paper); color:var(--ink);
+  }
+  .dropzone button:hover{background:var(--ink); color:var(--paper)}
+  .inputbox.over{outline:3px solid var(--red); outline-offset:-3px}
+  .inputbox.over .dropzone{color:var(--red)}
+  #quota{
+    margin-top:12px; background:var(--panel); border:3px solid var(--ink);
+    padding:8px 16px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em;
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  #quota .plan-tag{font-weight:700; color:var(--red)}
+  #quota a{color:var(--ink)}
+
+  /* ── 改寫對照 ─────────────────────────── */
+  .cmp-panel{margin-top:16px}
+  .cmp-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 16px; border-bottom:3px solid var(--ink); background:#f2ede2;
+  }
+  .cmp-bar .stat{font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; flex:1; min-width:180px}
+  .cmp-bar .stat b{color:var(--red)}
+  .cmp-bar button{
+    font:inherit; font-size:12px; font-weight:700; letter-spacing:.12em; cursor:pointer;
+    padding:7px 14px; border:2px solid var(--ink); background:var(--panel); color:var(--ink);
+  }
+  .cmp-bar button:hover{background:var(--paper)}
+  .cmp-bar button.solid{background:var(--ink); color:var(--paper)}
+  .cmp-bar button.solid:hover{background:#3a352a}
+  .cmp-bar button.red{background:var(--red); color:#fff; border-color:var(--red)}
+  .cmp-bar button.red:hover{background:#a5301f}
+  .cmp-bar .fname{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em; color:var(--dim)}
+  .cmp-head{
+    display:grid; grid-template-columns:1fr 1fr; font-family:var(--font-mincho);
+    font-size:12.5px; letter-spacing:.2em; color:var(--dim); border-bottom:1px dashed var(--rule);
+  }
+  .cmp-head > div{padding:8px 20px}
+  .cmp-head > div + div{border-left:1px dashed var(--rule)}
+  .cmp{max-height:70vh; overflow:auto}
+  .cmp-row{display:grid; grid-template-columns:1fr 1fr; border-bottom:1px dashed var(--rule)}
+  .cmp-row:last-child{border-bottom:0}
+  .cmp-row > div{padding:14px 20px; line-height:2; white-space:pre-wrap; word-break:break-word; min-width:0}
+  .cmp-row .r{border-left:1px dashed var(--rule); background:#fff}
+  .cmp-row .r.same{color:var(--dimmer)}
+  .cmp-row.blank > div{padding:4px 20px}
+  .cmp-row.blank .pg{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dimmer)}
+  .cmp-status{padding:14px 20px; font-family:var(--font-mono); font-size:12px; color:var(--dim)}
+  .cmp-status.err{color:var(--red)}
+  @media (max-width:760px){
+    .cmp-head{display:none}
+    .cmp-row{grid-template-columns:1fr}
+    .cmp-row .r{border-left:0; border-top:1px dotted var(--rule)}
+  }
 
   /* ── 計分格（網點底）───────────────────── */
   .statbox{
@@ -260,6 +334,7 @@
   .price-sub{font-size:12px; letter-spacing:.16em; color:var(--dim); margin-bottom:16px}
   .plan ul{margin:0 0 18px; padding-left:1.3em; font-size:14px; line-height:2; color:var(--dim)}
   .note{margin-top:16px; font-size:12.5px; color:var(--dimmer)}
+  .note.err{color:var(--red)}
 
   /* ── 結帳 ─────────────────────────────── */
   .checkout{
@@ -426,8 +501,7 @@
     cursor:pointer; background:transparent; color:var(--ink);
   }
   .google-btn:hover{background:var(--paper); color:var(--ink)}
-  .google-btn .g{font-family:var(--font-mincho); font-size:15px; font-weight:700;
-    letter-spacing:.08em; border:1px solid var(--ink); padding:1px 8px}
+  .google-btn .g{width:20px; height:20px; flex:none; display:block}
   .login-msg{margin-top:14px; font-size:13px; line-height:1.7; color:var(--red)}
   .login-foot{margin-top:20px; display:flex; justify-content:space-between; gap:12px;
     flex-wrap:wrap; font-size:12.5px; color:var(--dimmer)}
@@ -446,7 +520,8 @@
   <header class="masthead">
     <h1><img src="brand/lockup/lockup-horizontal.png" alt="校稿王"></h1>
     <div class="masthead-right">
-      <span class="tagline">貼上文字就掃・不上傳・不改字</span>
+      <span class="tagline">貼上就掃・按一下改好</span>
+      <span class="ver" id="verTag">v2.0.0</span>
       <span class="seal">校閱</span>
       <span class="whoami" id="whoami" hidden>
         <img id="whoamiPic" alt="" onerror="this.remove()">
@@ -474,8 +549,8 @@
 
     <div class="cols">
       <section class="lede">
-        <h2>貼上文字，標出中文 AI 腔。</h2>
-        <p>43 條規則分六類，畫底線、寫改法。不上傳、不呼叫 API、不改字。改字還是人來。</p>
+        <h2>貼上文字，標出中文 AI 腔，<br>再幫你改好。</h2>
+        <p>43 條規則分六類，畫底線、寫改法。掃描在你的瀏覽器裡跑；按「改寫」才會把文字送去改，改完左右對照給你看。</p>
         <div class="btn-row">
           <a class="btn solid" href="#plans">看訂閱方案</a>
           <button class="btn ghost" id="tryOne" type="button">先試一段</button>
@@ -488,7 +563,7 @@
           <ol>
             <li>貼上一段文字</li>
             <li>命中處畫底線，滑鼠移上去看改法</li>
-            <li>自己改，工具不動你的字</li>
+            <li>按「改寫」，左邊原文、右邊改好的</li>
           </ol>
         </div>
         <div class="side slot">
@@ -513,9 +588,15 @@
     <div class="cols">
       <div class="inputbox">
         <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）"></textarea>
+        <div class="dropzone" id="dropzone">
+          <span>或把 <b>Word（.docx）</b>／<b>PDF</b> 拖進來，改完照原格式下載<span class="pro">付費版</span></span>
+          <button type="button" id="pickFile">選檔案</button>
+          <input type="file" id="fileIn" accept=".docx,.pdf,.txt,.md" hidden>
+        </div>
         <div class="btnbar">
           <button id="sample">試試範例</button>
           <button id="clear">清空</button>
+          <button id="rewriteBtn">改寫</button>
         </div>
       </div>
       <div class="statbox">
@@ -524,8 +605,23 @@
           <div class="count"><span class="n" id="softN">0</span><span class="lab">軟命中</span></div>
         </div>
         <div id="meta">等著你貼東西進來</div>
+        <div id="quota"><span>方案讀取中…</span></div>
       </div>
     </div>
+
+    <section class="panel cmp-panel" id="cmpPanel" hidden>
+      <h2 class="panel-h invert">改寫對照　左邊原文・右邊改寫版</h2>
+      <div class="cmp-bar">
+        <span class="stat" id="cmpStat"></span>
+        <span class="fname" id="cmpFile" hidden></span>
+        <button type="button" id="cmpDownload" class="red" hidden>下載改寫版</button>
+        <button type="button" id="cmpCopy">複製改寫版</button>
+        <button type="button" id="cmpRescan" class="solid">用改寫版再掃一次</button>
+      </div>
+      <div class="cmp-head"><div>原文</div><div>改寫版</div></div>
+      <div class="cmp" id="cmp"></div>
+      <div class="cmp-status" id="cmpStatus" hidden></div>
+    </section>
 
     <div class="cols">
       <section class="panel">
@@ -587,10 +683,11 @@
         <h3>免費</h3>
         <div class="plan-body">
           <div class="price">NT$0</div>
-          <div class="price-sub">每月 5 次掃描</div>
+          <div class="price-sub">每月 5 篇改寫</div>
           <ul>
-            <li>43 條規則全開</li>
-            <li>單篇 2000 字上限</li>
+            <li>43 條規則全開，掃描不限次數</li>
+            <li>AI 改寫，左右對照</li>
+            <li>字數不限</li>
             <li>不留紀錄</li>
           </ul>
           <a class="btn ghost block" href="#home">開始使用</a>
@@ -603,10 +700,10 @@
           <div class="price">NT$180</div>
           <div class="price-sub">每月・不限次數</div>
           <ul>
-            <li>不限掃描次數</li>
-            <li>單篇 20000 字</li>
-            <li>自訂規則黑名單</li>
-            <li>匯出命中清單</li>
+            <li>改寫不限次數、不限字數</li>
+            <li>上傳 Word、PDF，改完照原格式出去</li>
+            <li>歷史紀錄，改過的都存著</li>
+            <li>批次改寫，一次丟 20 篇</li>
           </ul>
           <a class="btn solid block" href="#checkout?plan=monthly">選這個</a>
         </div>
@@ -622,7 +719,7 @@
             <li>共用規則表</li>
             <li>發票與統一編號</li>
           </ul>
-          <a class="btn ghost block" href="#checkout?plan=team">選這個</a>
+          <a class="btn ghost block" href="#contact">聯絡我們</a>
         </div>
       </section>
     </div>
@@ -641,29 +738,17 @@
       <div class="checkout-grid">
         <div class="card-form">
           <span class="tag-red">記入</span>
+          <!-- 卡號不在這裡填：按付款會跳到綠界的付款頁，卡號、有效期限、安全碼都在那邊輸入 -->
           <form class="fields" id="payForm">
             <label class="field">
               <span class="lab">電子郵件<span class="req">＊</span></span>
               <input type="email" id="ckEmail" placeholder="you@example.com" required>
             </label>
             <label class="field">
-              <span class="lab">卡號<span class="req">＊</span></span>
-              <input class="mono" id="ckCard" placeholder="0000 0000 0000 0000" inputmode="numeric" required>
+              <span class="lab">統一編號（選填，開發票用）</span>
+              <input class="mono" id="ckTax" placeholder="8 碼" inputmode="numeric" pattern="[0-9]{8}" maxlength="8">
             </label>
-            <div class="field-row">
-              <label class="field">
-                <span class="lab">有效期限<span class="req">＊</span></span>
-                <input class="mono" id="ckExp" placeholder="MM / YY" required>
-              </label>
-              <label class="field">
-                <span class="lab">安全碼<span class="req">＊</span></span>
-                <input class="mono" id="ckCvc" placeholder="CVC" required>
-              </label>
-            </div>
-            <label class="field">
-              <span class="lab">統一編號（選填）</span>
-              <input class="mono" id="ckTax" placeholder="8 碼" inputmode="numeric">
-            </label>
+            <div class="note" style="margin-top:4px">卡號在下一頁（綠界付款頁）輸入，這裡不收卡號。</div>
           </form>
         </div>
 
@@ -684,12 +769,13 @@
             </div>
           </div>
 
-          <!-- 接綠界時：這顆按鈕改成打後端建立訂單 + 取 CheckMacValue，再 POST 到綠界付款頁 -->
-          <button class="pay-btn" type="submit" form="payForm">付款</button>
+          <!-- 按下去：打 Edge Function ecpay/create 建訂單、拿 CheckMacValue，再 POST 到綠界付款頁 -->
+          <button class="pay-btn" type="submit" form="payForm" id="payBtn">前往綠界付款</button>
+          <div class="note err" id="payMsg" hidden></div>
 
           <div class="assure">
             <div class="seal-round">受付<br>済</div>
-            <span>刷卡由金流商處理，這頁不存卡號。隨時可取消，用到期末。</span>
+            <span>刷卡在綠界付款頁完成，這裡不碰卡號。一次付清買 30 天，到期不會自動扣款。</span>
           </div>
         </div>
       </div>
@@ -702,11 +788,12 @@
       <img src="assets/hero.png" alt="" onerror="this.remove()">
       <div class="veil"></div>
       <div></div>
+      <!-- 內容由 showThanks() 依訂單狀態填：確認中 / 付款完成 / 付款失敗 -->
       <div class="body">
-        <div class="ok">✓ 付款完成</div>
-        <h2>謝謝訂閱，<br>訂單 <span id="thanksOrder">—</span></h2>
-        <p>開通信與登入連結五分鐘內寄到 <span id="thanksEmail">你的信箱</span>，電子發票一小時內。</p>
-        <p class="small">沒收到就先看垃圾信件匣，還是沒有再寫信來。</p>
+        <div class="ok" id="thanksOk">確認中</div>
+        <h2 id="thanksTitle">跟綠界確認付款，<br>訂單 <span>—</span></h2>
+        <p id="thanksText">通常幾秒內就好，這頁會自己更新。</p>
+        <p class="small" id="thanksSmall">刷卡成功但這頁一直沒動，先重新整理；還是沒有再寫信來，附上訂單編號。</p>
         <div class="btn-row">
           <a class="btn solid" href="#home" style="font-size:13.5px;letter-spacing:.16em;padding:13px 26px">開始檢查</a>
           <a class="btn ghost" href="#contact" style="font-size:13.5px;letter-spacing:.16em;padding:13px 26px">聯絡我們</a>
@@ -783,11 +870,19 @@
     <section class="faq">
       <div class="item">
         <div class="q">文字會被上傳嗎？</div>
-        <div class="a">不會。掃描在你的瀏覽器裡跑，不呼叫 API。</div>
+        <div class="a">掃描不會，在你的瀏覽器裡跑。按「改寫」才會把那篇文字送到我們的伺服器交給 AI 模型改，免費版改完不留檔。</div>
       </div>
       <div class="item">
         <div class="q">它會幫我改字嗎？</div>
-        <div class="a">不會。它只標位置、寫改法。改字還是人來。</div>
+        <div class="a">會。掃完按「改寫」，左邊原文、右邊改好的，一段對一段。改寫版你自己看過再用。</div>
+      </div>
+      <div class="item">
+        <div class="q">免費版能改幾次？</div>
+        <div class="a">每月 5 篇，字數不限。付費版不限次數。</div>
+      </div>
+      <div class="item">
+        <div class="q">上傳的 Word、PDF 會被存起來嗎？</div>
+        <div class="a">不會。檔案在你的瀏覽器裡拆開，只有文字段落送去改寫；改好的檔案也是在瀏覽器裡組回去的，整份檔案不會離開你的電腦。</div>
       </div>
       <div class="item">
         <div class="q">命中了一定要改？</div>
@@ -836,7 +931,12 @@
         </div>
 
         <button class="google-btn" type="button" id="loginGoogleBtn">
-          <span class="g">G</span>
+          <svg class="g" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
           <span>以 Google 帳號登入</span>
         </button>
 
@@ -851,8 +951,8 @@
   </div>
 
   <div class="footer">
-    <span>純前端、離線可用，不上傳、不呼叫 API、不改字。</span>
-    <span>初步架構，內容待填。</span>
+    <span>掃描在本機跑；改寫交給 AI 模型。</span>
+    <span>校稿王 <span id="verFoot">v2.0.0</span></span>
   </div>
 
 </div>
@@ -1029,6 +1129,20 @@ function scan(raw) {
   return { plain, hits, marks, tagged };
 }
 
+// 把 plain 依 marks 包成帶 <mark> 的 HTML；idPrefix 為空就不給 id（對照區用，避免跟全文區撞 id）
+function markHtml(plain, marks, idPrefix) {
+  let html = "", cur = 0;
+  for (const mk of marks) {
+    html += esc(plain.slice(cur, mk.start));
+    html += '<mark class="' + (mk.soft ? "soft" : "hard") + '"'
+          + (idPrefix ? ' id="' + idPrefix + mk.markIndex + '"' : "")
+          + ' title="' + esc(mk.cat + "：" + mk.tip) + '">'
+          + esc(plain.slice(mk.start, mk.end)) + "</mark>";
+    cur = mk.end;
+  }
+  return html + esc(plain.slice(cur));
+}
+
 function render(raw) {
   if (!raw.trim()) {
     $out.innerHTML = '<span class="empty">還沒有內容。</span>';
@@ -1053,16 +1167,7 @@ function render(raw) {
     + "　／　總計 " + hits.length + " 處";
 
   // 全文標記：硬命中畫朱紅底線＋淡紅螢光，軟命中畫墨色虛線
-  let html = "", cur = 0;
-  for (const mk of marks) {
-    html += esc(plain.slice(cur, mk.start));
-    html += '<mark class="' + (mk.soft ? "soft" : "hard") + '" id="mk' + mk.markIndex + '" '
-          + 'title="' + esc(mk.cat + "：" + mk.tip) + '">'
-          + esc(plain.slice(mk.start, mk.end)) + "</mark>";
-    cur = mk.end;
-  }
-  html += esc(plain.slice(cur));
-  $out.innerHTML = html || '<span class="empty">還沒有內容。</span>';
+  $out.innerHTML = markHtml(plain, marks, "mk") || '<span class="empty">還沒有內容。</span>';
 
   // 命中清單（依類別分組，全部列出，數量與 check-ai-style.mjs 一致）
   if (hits.length === 0) {
@@ -1176,9 +1281,10 @@ if (sb) {
       history.replaceState(null, "", location.pathname + "#home");
     }
     route();
+    loadProfile();
   });
 
-  sb.auth.getSession().then(({ data }) => { session = data.session; route(); });
+  sb.auth.getSession().then(({ data }) => { session = data.session; route(); loadProfile(); });
 
   document.getElementById("loginGoogleBtn").addEventListener("click", async () => {
     $loginMsg.textContent = "";
@@ -1205,44 +1311,855 @@ if (sb) {
   });
 }
 
+// ── 版本 ───────────────────────────────────────────────
+const APP_VERSION = "2.0.0";
+document.getElementById("verTag").textContent = "v" + APP_VERSION;
+document.getElementById("verFoot").textContent = "v" + APP_VERSION;
+
+// ── 方案與額度 ─────────────────────────────────────────
+// 免費版每月篇數，要跟 supabase/functions/rewrite/index.ts 的 FREE_MONTHLY 一致
+const FREE_MONTHLY = 5;
+// paidUntil 為 null 是手動標記的永久付費；有值就要還沒過期才算付費
+const state = { plan: "free", paidUntil: null, remaining: null, loaded: false };
+const $quota = document.getElementById("quota");
+
+function ymNow() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0");
+}
+
+async function loadProfile() {
+  if (!sb || !session) { state.plan = "free"; state.paidUntil = null; state.remaining = null; state.loaded = false; return; }
+  const uid = session.user.id;
+  const [{ data: prof }, { data: use }] = await Promise.all([
+    sb.from("profiles").select("plan, paid_until").eq("id", uid).maybeSingle(),
+    sb.from("usage").select("n").eq("user_id", uid).eq("ym", ymNow()).maybeSingle(),
+  ]);
+  const stillPaid = !!prof && prof.plan === "paid" && (!prof.paid_until || new Date(prof.paid_until) > new Date());
+  state.plan = stillPaid ? "paid" : "free";
+  state.paidUntil = stillPaid ? prof.paid_until : null;
+  state.remaining = Math.max(0, FREE_MONTHLY - ((use && use.n) || 0));
+  state.loaded = true;
+  renderQuota();
+}
+
+function renderQuota() {
+  if (state.plan === "paid") {
+    const until = state.paidUntil ? "　到 " + fmtDate(state.paidUntil) : "";
+    $quota.innerHTML = '<span><span class="plan-tag">付費版</span>　改寫不限次數' + until + '</span>'
+      + (state.paidUntil ? '<a href="#plans">續約</a>' : '');
+    return;
+  }
+  const left = state.remaining == null ? "?" : state.remaining;
+  $quota.innerHTML = '<span><span class="plan-tag">免費版</span>　本月還能改 ' + left + ' 篇，字數不限</span>'
+    + '<a href="#plans">升級不限次數</a>';
+}
+
+// ── 改寫：段落送 Edge Function，左右對照 ─────────────────
+// 文章先切成段落（以換行為界，空行保留位置但不送），再每批約 CHUNK_CHARS 字送一次，
+// 回來逐批回填右欄。長文靠分批，沒有字數上限。
+const CHUNK_CHARS = 2500;
+const $rewriteBtn = document.getElementById("rewriteBtn");
+const $cmpPanel = document.getElementById("cmpPanel");
+const $cmp = document.getElementById("cmp");
+const $cmpStat = document.getElementById("cmpStat");
+const $cmpStatus = document.getElementById("cmpStatus");
+let lastRewrite = null;   // { input, output }，之後歷史紀錄要用
+
+function splitParas(text) {
+  return text.split("\n").map((t, i) => ({ i, t }));
+}
+
+function chunkParas(paras) {
+  const chunks = [];
+  let cur = [], size = 0;
+  for (const p of paras) {
+    if (!p.t.trim()) continue;
+    if (cur.length && (size + p.t.length > CHUNK_CHARS || cur.length >= 150)) { chunks.push(cur); cur = []; size = 0; }
+    cur.push(p);
+    size += p.t.length;
+  }
+  if (cur.length) chunks.push(cur);
+  return chunks;
+}
+
+// 這一批命中的詞與改法，去重後給模型當提示
+function hintsFor(text) {
+  const seen = new Set(), out = [];
+  for (const h of scan(text).hits) {
+    if (seen.has(h.word)) continue;
+    seen.add(h.word);
+    out.push({ word: h.word, tip: h.tip });
+  }
+  return out.slice(0, 60);
+}
+
+async function callRewrite(body) {
+  const { data, error } = await sb.functions.invoke("rewrite", { body });
+  if (error) {
+    let msg = error.message || String(error);
+    let status = 0;
+    try {
+      status = error.context && error.context.status;
+      const j = await error.context.json();
+      if (j && j.error) msg = j.error;
+      if (j && j.remaining != null) { state.remaining = j.remaining; renderQuota(); }
+    } catch (e) { /* 不是 JSON 就用原訊息 */ }
+    if (status === 401) msg = "登入已失效，請重新登入。";
+    throw new Error(msg);
+  }
+  return data;
+}
+
+function setCmpStatus(msg, isErr) {
+  $cmpStatus.hidden = !msg;
+  $cmpStatus.textContent = msg || "";
+  $cmpStatus.classList.toggle("err", !!isErr);
+}
+
+function renderCmp(paras, out, done) {
+  let html = "";
+  for (const p of paras) {
+    if (!p.t.trim()) {
+      html += '<div class="cmp-row blank"><div>' + (p.label ? '<span class="pg">' + esc(p.label) + '</span>' : '') + '</div><div class="r"></div></div>';
+      continue;
+    }
+    const { marks } = scan(p.t);
+    const left = markHtml(p.t, marks, "");
+    let right, cls = "r";
+    if (!done.has(p.i)) { right = '<span class="empty">…</span>'; }
+    else if (out[p.i] === p.t) { right = esc(out[p.i]); cls += " same"; }
+    else { right = esc(out[p.i]); }
+    html += '<div class="cmp-row"><div>' + left + '</div><div class="' + cls + '">' + right + "</div></div>";
+  }
+  $cmp.innerHTML = html;
+}
+
+function countHits(text) {
+  const hits = scan(text).hits;
+  const hard = hits.filter(h => !h.soft).length;
+  return { hard, soft: hits.length - hard };
+}
+
+function finishCmp(input, output) {
+  const a = countHits(input), b = countHits(output);
+  $cmpStat.innerHTML = "硬命中 <b>" + a.hard + " → " + b.hard + "</b>　軟命中 " + a.soft + " → " + b.soft
+    + "　／　" + output.replace(/\s/g, "").length + " 字";
+}
+
+// 忙碌中鎖住改寫鈕（貼上改寫與上傳檔案共用）
+let busy = false;
+function setBusy(on, label) {
+  busy = on;
+  $rewriteBtn.disabled = on;
+  $rewriteBtn.textContent = on ? (label || "處理中…") : "改寫";
+}
+// 上傳檔案改完的成品 { blob, name }，按「下載改寫版」存檔
+let fileJob = null;
+const $cmpDownload = document.getElementById("cmpDownload");
+const $cmpFile = document.getElementById("cmpFile");
+function setFileBadge(text) { $cmpFile.hidden = !text; $cmpFile.textContent = text || ""; }
+
+// 共用改寫流程：paras 是 [{i, t}]，i 就是位置，空白段保留位置不送。
+// 分批送、逐批回填對照區，回傳依 i 排的改寫結果（沒改的段落原樣）。
+async function runRewrite(paras, opts) {
+  const chunks = chunkParas(paras);
+  if (!chunks.length) throw new Error("沒有可改寫的段落");
+  const out = paras.map(p => p.t);
+  const done = new Set();
+  $cmpStat.textContent = "";
+  renderCmp(paras, out, done);
+  setCmpStatus("改寫中… 0/" + chunks.length + " 批");
+  for (let c = 0; c < chunks.length; c++) {
+    const chunk = chunks[c];
+    const data = await callRewrite({
+      paragraphs: chunk,
+      hints: hintsFor(chunk.map(p => p.t).join("\n")),
+      part: c,
+      total: chunks.length,
+      source: (opts && opts.source) || "paste",
+    });
+    for (const r of data.paragraphs) { out[r.i] = r.t; done.add(r.i); }
+    if (data.plan) state.plan = data.plan;
+    if (data.remaining != null) { state.remaining = data.remaining; renderQuota(); }
+    renderCmp(paras, out, done);
+    setCmpStatus("改寫中… " + (c + 1) + "/" + chunks.length + " 批");
+  }
+  return out;
+}
+
+async function doRewrite() {
+  const raw = $in.value;
+  if (!raw.trim()) { $in.focus(); return; }
+  if (!sb || !session) { location.hash = "login"; return; }
+  if (busy) return;
+  if (state.plan === "free" && state.remaining === 0) {
+    $cmpPanel.hidden = false;
+    setCmpStatus("免費版這個月的 " + FREE_MONTHLY + " 篇用完了，下個月一號重算，或升級付費版。", true);
+    return;
+  }
+
+  const { plain } = scan(raw);
+  const paras = splitParas(plain);
+  setBusy(true, "改寫中…");
+  fileJob = null;
+  $cmpDownload.hidden = true;
+  setFileBadge("");
+  $cmpPanel.hidden = false;
+  $cmpPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+
+  try {
+    const out = await runRewrite(paras, { source: "paste" });
+    lastRewrite = { input: plain, output: out.join("\n") };
+    finishCmp(lastRewrite.input, lastRewrite.output);
+    setCmpStatus("");
+  } catch (e) {
+    setCmpStatus("改寫失敗：" + e.message, true);
+  } finally {
+    setBusy(false);
+  }
+}
+$rewriteBtn.addEventListener("click", doRewrite);
+
+document.getElementById("cmpCopy").addEventListener("click", async (e) => {
+  if (!lastRewrite) return;
+  const btn = e.currentTarget;
+  try { await navigator.clipboard.writeText(lastRewrite.output); btn.textContent = "已複製"; }
+  catch (err) { btn.textContent = "複製失敗"; }
+  setTimeout(() => { btn.textContent = "複製改寫版"; }, 1200);
+});
+
+document.getElementById("cmpRescan").addEventListener("click", () => {
+  if (!lastRewrite) return;
+  $in.value = lastRewrite.output;
+  render($in.value);
+  $in.scrollIntoView({ block: "center", behavior: "smooth" });
+});
+
+// ── 上傳檔案：Word／PDF 進來，改完照原格式出去（付費版）──────
+// 檔案全程在瀏覽器裡處理：拆段落 → 只把文字送去改寫 → 在本機組回同格式的檔案，整份檔不上傳。
+//   docx：JSZip 拆開 word/document.xml，每個 w:p 底下的 w:t 依序合成一段。改完寫回字數最多的那個
+//         w:t、其他 w:t 清空，所以段落樣式、標題、清單、表格、圖片、頁首頁尾都不動；
+//         段內混合格式（一句裡幾個字粗體）會統一成該段主要格式。
+//   pdf ：pdf.js 抽字，依座標併成行、再併成段。改完用 pdf-lib 在原頁面上蓋白、寫上新字
+//         （嵌 Noto Sans TC，只嵌用到的字），圖、表、版面都留著。新字塞不下會縮到最小 75%。
+//   txt／md：直接填進輸入框，不算付費功能。
+// 函式庫只在真的丟檔案時才載，平常掃描跟改寫不受影響。
+const LIB = {
+  jszip: "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+  pdflib: "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js",
+  fontkit: "https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js",
+  pdfjs: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs",
+  pdfjsWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs",
+};
+// PDF 寫字用的中文字型：Noto Sans TC 定格 Regular、Big5+HKSCS 字集、WOFF 4 MB，載一次瀏覽器就快取。
+// 一定要 TrueType 外框＋字形資料 4 bytes 對齊，fontkit 的 subset 才不會壞（見 assets/fonts/OFL.txt）。
+// 下載後先解成 TTF 再交給 fontkit：它直接吃 WOFF 的話每碰一個字形就把整個 glyf 表重新解壓一次，慢到不能用
+const FONT_URL = "assets/fonts/NotoSansTC-Regular.woff";
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+const _scripts = {};
+function loadScript(url) {
+  if (!_scripts[url]) _scripts[url] = new Promise((ok, no) => {
+    const s = document.createElement("script");
+    s.src = url;
+    s.onload = ok;
+    s.onerror = () => { delete _scripts[url]; no(new Error("載不到 " + url.split("/").pop() + "，請確認網路")); };
+    document.head.appendChild(s);
+  });
+  return _scripts[url];
+}
+let _pdfjs = null;
+async function libPdfjs() {
+  if (!_pdfjs) {
+    const m = await import(LIB.pdfjs);
+    m.GlobalWorkerOptions.workerSrc = LIB.pdfjsWorker;
+    _pdfjs = m;
+  }
+  return _pdfjs;
+}
+let _font = null;
+async function loadFont(onProgress) {
+  if (_font) return _font;
+  const res = await fetch(FONT_URL);
+  if (!res.ok || !res.body) throw new Error("載不到中文字型（" + FONT_URL + "）。file:// 直接開的話字型抓不到，請用 node _server.mjs 起本機伺服器");
+  const total = +res.headers.get("Content-Length") || 0;
+  const reader = res.body.getReader();
+  const chunks = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    if (onProgress) onProgress(got, total);
+  }
+  const buf = new Uint8Array(got);
+  let off = 0;
+  for (const c of chunks) { buf.set(c, off); off += c.length; }
+  _font = await woffToTtf(buf);
+  return _font;
+}
+
+async function inflateZlib(u8) {
+  const res = new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate")));
+  return new Uint8Array(await res.arrayBuffer());
+}
+// WOFF → SFNT（TTF）：表逐個解壓、重排目錄、資料對齊 4 bytes。不是 wOFF 就原樣回傳
+async function woffToTtf(woff) {
+  const dv = new DataView(woff.buffer, woff.byteOffset, woff.byteLength);
+  if (dv.getUint32(0) !== 0x774F4646) return woff;
+  const flavor = dv.getUint32(4), n = dv.getUint16(12);
+  const tables = [];
+  for (let i = 0, off = 44; i < n; i++, off += 20) {
+    tables.push({ tag: dv.getUint32(off), offset: dv.getUint32(off + 4), comp: dv.getUint32(off + 8),
+      orig: dv.getUint32(off + 12), sum: dv.getUint32(off + 16) });
+  }
+  const datas = [];
+  for (const t of tables) {
+    const raw = woff.subarray(t.offset, t.offset + t.comp);
+    datas.push(t.comp < t.orig ? await inflateZlib(raw) : raw);
+  }
+  let total = 12 + 16 * n;
+  for (const t of tables) total += (t.orig + 3) & ~3;
+  const out = new Uint8Array(total);
+  const ov = new DataView(out.buffer);
+  let es = 0;
+  while ((1 << (es + 1)) <= n) es++;
+  const sr = (1 << es) * 16;
+  ov.setUint32(0, flavor); ov.setUint16(4, n); ov.setUint16(6, sr); ov.setUint16(8, es); ov.setUint16(10, n * 16 - sr);
+  let pos = 12 + 16 * n;
+  tables.forEach((t, i) => {
+    const rec = 12 + i * 16;
+    ov.setUint32(rec, t.tag); ov.setUint32(rec + 4, t.sum); ov.setUint32(rec + 8, pos); ov.setUint32(rec + 12, t.orig);
+    out.set(datas[i], pos);
+    pos += (t.orig + 3) & ~3;
+  });
+  return out;
+}
+
+// ── docx ────────────────────────────────────────────────
+const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+const XML_NS = "http://www.w3.org/XML/1998/namespace";
+
+function isW(node, localName) { return node.namespaceURI === W_NS && node.localName === localName; }
+function wAncestor(node, stopAt, localName) {
+  for (let a = node.parentNode; a && a !== stopAt; a = a.parentNode) if (isW(a, localName)) return a;
+  return null;
+}
+// 依文件順序收一段裡的 w:t／w:tab／w:br；不進巢狀的 w:p（文字方塊自己算一段）、跳過追蹤修訂刪掉的字
+function collectRuns(node, out) {
+  for (const c of node.childNodes) {
+    if (c.nodeType !== 1) continue;
+    if (isW(c, "p") || isW(c, "del")) continue;
+    if (isW(c, "t")) out.push({ el: c, s: c.textContent });
+    else if (isW(c, "tab")) out.push({ el: c, s: "\t", ctl: true });
+    else if (isW(c, "br")) { if (!c.getAttributeNS(W_NS, "type")) out.push({ el: c, s: "\n", ctl: true }); }
+    else collectRuns(c, out);
+  }
+}
+
+async function readDocx(file) {
+  await loadScript(LIB.jszip);
+  const zip = await window.JSZip.loadAsync(file, { createFolders: false });   // 不要多出 word/ 目錄條目
+  const entry = zip.file("word/document.xml");
+  if (!entry) throw new Error("這不是 Word 檔（找不到 word/document.xml）。舊版 .doc 請先在 Word 另存成 .docx");
+  const xml = await entry.async("string");
+  const dom = new DOMParser().parseFromString(xml, "application/xml");
+  if (dom.getElementsByTagName("parsererror").length) throw new Error("Word 內容解析失敗");
+
+  const paras = [], blocks = [];
+  for (const p of dom.getElementsByTagNameNS(W_NS, "p")) {
+    const runs = [];
+    collectRuns(p, runs);
+    const text = runs.map(r => r.s).join("");
+    if (!text.trim() || !runs.some(r => !r.ctl)) continue;
+    const b = { i: paras.length, t: text, p, runs };
+    paras.push({ i: b.i, t: text });
+    blocks.push(b);
+  }
+
+  return {
+    kind: "docx", paras,
+    async apply(out) {
+      for (const b of blocks) {
+        const nt = out[b.i];
+        if (nt == null || nt === b.t) continue;
+        const ts = b.runs.filter(r => !r.ctl).map(r => r.el);
+        // 宿主：不在超連結裡、字數最多的那個 w:t（段落樣式和它的字元格式都留著）；其他 w:t 清空，
+        // 舊的 w:tab／w:br 拿掉，新字裡的 \t、\n 在宿主旁邊重建
+        const cands = ts.filter(t => !wAncestor(t, b.p, "hyperlink"));
+        const host = (cands.length ? cands : ts).reduce((a, c) => c.textContent.length > a.textContent.length ? c : a);
+        for (const t of ts) if (t !== host) t.textContent = "";
+        for (const r of b.runs) if (r.ctl) r.el.parentNode.removeChild(r.el);
+        const pieces = nt.split(/([\t\n])/);
+        host.textContent = pieces[0];
+        host.setAttributeNS(XML_NS, "xml:space", "preserve");
+        let after = host;
+        for (let k = 1; k < pieces.length; k++) {
+          let el;
+          if (pieces[k] === "\t") el = dom.createElementNS(W_NS, "w:tab");
+          else if (pieces[k] === "\n") el = dom.createElementNS(W_NS, "w:br");
+          else {
+            if (!pieces[k]) continue;
+            el = dom.createElementNS(W_NS, "w:t");
+            el.setAttributeNS(XML_NS, "xml:space", "preserve");
+            el.textContent = pieces[k];
+          }
+          after.parentNode.insertBefore(el, after.nextSibling);
+          after = el;
+        }
+      }
+      let s = new XMLSerializer().serializeToString(dom);
+      const decl = xml.match(/^<\?xml[^>]*\?>/);
+      if (decl && !s.startsWith("<?xml")) s = decl[0] + s;
+      zip.file("word/document.xml", s);
+      const blob = await zip.generateAsync({ type: "blob", mimeType: DOCX_MIME, compression: "DEFLATE" });
+      return { blob, notes: [] };
+    },
+  };
+}
+
+// ── pdf ─────────────────────────────────────────────────
+// pdf.js 的文字片段依 baseline 併成行。直排、旋轉的字跳過（留在原處不動）
+function pdfLines(items) {
+  const lines = [];
+  for (const it of items) {
+    if (!it.str || !it.str.trim() || !it.transform) continue;
+    if (it.dir && it.dir !== "ltr") continue;
+    const t = it.transform;
+    const size = Math.hypot(t[2], t[3]);
+    if (size < 3 || Math.abs(t[1]) > size * 0.02 || Math.abs(t[2]) > size * 0.02) continue;
+    const x0 = t[4], y = t[5], x1 = x0 + (it.width || 0);
+    let ln = null;
+    for (const l of lines) {
+      if (Math.abs(l.y - y) > Math.max(l.size, size) * 0.35) continue;
+      if (x0 > l.x1 + size * 1.5 || x1 < l.x0 - size * 1.5) continue;   // 隔太遠是另一欄
+      ln = l;
+      break;
+    }
+    if (!ln) { ln = { y, size, x0, x1, parts: [] }; lines.push(ln); }
+    ln.parts.push({ x0, x1, s: it.str });
+    ln.size = Math.max(ln.size, size);
+    ln.x0 = Math.min(ln.x0, x0);
+    ln.x1 = Math.max(ln.x1, x1);
+  }
+  for (const l of lines) {
+    l.parts.sort((a, b) => a.x0 - b.x0);
+    let s = "", prevX1 = null;
+    for (const p of l.parts) {
+      // 英數字之間有空隙才補空格；中文逐字片段直接接，空得很開（半個字以上）才補全形空白
+      const gap = prevX1 == null ? 0 : p.x0 - prevX1;
+      const latin = /[A-Za-z0-9]$/.test(s) || /^[A-Za-z0-9]/.test(p.s);
+      if (prevX1 != null && !/\s$/.test(s) && !/^\s/.test(p.s)) {
+        if (latin && gap > l.size * 0.2) s += " ";
+        else if (!latin && gap > l.size * 0.5) s += "\u3000";
+      }
+      s += p.s;
+      prevX1 = p.x1;
+    }
+    // 有些 PDF（Chrome 印的最常見）會把「一、而、生」對到康熙部首碼位（U+2E80–2FDF），換回一般漢字
+    l.text = s.replace(/\s+/g, " ").trim().replace(/[\u2E80-\u2FDF]/g, c => c.normalize("NFKC"));
+  }
+  return lines.filter(l => l.text);
+}
+
+// 行併成段：字級相同、水平重疊、垂直間距沒明顯拉開就是同一段。
+// 首行縮排、或上一行提早收尾且以句號結束，視為新段落開始。
+function pdfBlocks(lines) {
+  lines.sort((a, b) => b.y - a.y || a.x0 - b.x0);
+  const blocks = [];
+  for (const ln of lines) {
+    let best = null, bestGap = Infinity;
+    for (const b of blocks) {
+      const last = b.lines[b.lines.length - 1];
+      const gap = last.y - ln.y;
+      if (gap <= 0 || gap >= bestGap) continue;
+      if (gap > (b.pitch ? b.pitch * 1.4 : last.size * 1.9) + 0.5) continue;
+      if (Math.abs(ln.size - last.size) > last.size * 0.15) continue;
+      const ov = Math.min(ln.x1, b.x1) - Math.max(ln.x0, b.x0);
+      if (ov < Math.min(ln.x1 - ln.x0, b.x1 - b.x0) * 0.5) continue;
+      if (ln.x0 - last.x0 > last.size * 1.2) continue;
+      if (last.x1 < b.x1 - last.size * 1.5 && /[。！？.!?」』）)]$/.test(last.text)) continue;
+      best = b;
+      bestGap = gap;
+    }
+    if (best) {
+      best.lines.push(ln);
+      best.pitch = (best.lines[0].y - ln.y) / (best.lines.length - 1);
+      best.x0 = Math.min(best.x0, ln.x0);
+      best.x1 = Math.max(best.x1, ln.x1);
+      best.size = Math.max(best.size, ln.size);
+    } else {
+      blocks.push({ lines: [ln], x0: ln.x0, x1: ln.x1, size: ln.size, pitch: 0 });
+    }
+  }
+  for (const b of blocks) {
+    let s = "";
+    for (const l of b.lines) {
+      const sp = /[A-Za-z0-9,.;:]$/.test(s) && /^[A-Za-z0-9(]/.test(l.text);
+      s += (s && sp ? " " : "") + l.text;
+    }
+    b.text = s;
+    b.top = b.lines[0].y;
+    b.bottom = b.lines[b.lines.length - 1].y;
+  }
+  // 每段往下還有多少空白可以借（新字比較長時用）：到下方最近一段頂端為止
+  for (const b of blocks) {
+    let floor = -Infinity;
+    for (const o of blocks) {
+      if (o === b || o.top >= b.bottom) continue;
+      if (Math.min(o.x1, b.x1) - Math.max(o.x0, b.x0) <= 0) continue;
+      floor = Math.max(floor, o.top + o.size * 0.95);
+    }
+    if (!isFinite(floor)) floor = Math.max(0, b.bottom - b.size * 6);
+    b.room = Math.max(0, b.bottom - b.size * 0.35 - floor - 2);
+  }
+  return blocks;
+}
+
+// 頁碼、日期、表格裡的數字這種不送改寫
+function pdfWorth(text) {
+  const cjk = (text.match(/[\u3400-\u9fff]/g) || []).length;
+  const words = (text.match(/[A-Za-z]{2,}/g) || []).length;
+  return cjk >= 4 || words >= 4;
+}
+
+async function readPdf(file) {
+  const pdfjs = await libPdfjs();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let doc;
+  try {
+    doc = await pdfjs.getDocument({ data: bytes.slice() }).promise;   // pdf.js 會接管這份 buffer，複製一份留給 pdf-lib
+  } catch (e) {
+    if (e && e.name === "PasswordException") throw new Error("這份 PDF 有密碼保護，先解除再上傳");
+    throw new Error("PDF 打不開：" + (e && e.message || e));
+  }
+  const paras = [], blocks = [];
+  for (let n = 1; n <= doc.numPages; n++) {
+    const page = await doc.getPage(n);
+    const tc = await page.getTextContent();
+    let first = true;
+    for (const b of pdfBlocks(pdfLines(tc.items))) {
+      if (!pdfWorth(b.text)) continue;
+      if (first) { paras.push({ i: paras.length, t: "", label: "第 " + n + " 頁" }); first = false; }
+      b.i = paras.length;
+      b.page = n - 1;
+      paras.push({ i: b.i, t: b.text });
+      blocks.push(b);
+    }
+  }
+  doc.destroy();
+  return { kind: "pdf", paras, apply: (out, onStatus) => pdfApply(bytes, blocks, out, onStatus) };
+}
+
+// 中文逐字可斷、英數字整個詞不拆、標點不放行首
+const _charW = new Map();   // 每個字只量一次（字型固定是 Noto Sans TC；GPOS 已拆掉，寬度就是逐字相加）
+function pdfWrap(text, font, size, width) {
+  const units = text.match(/[A-Za-z0-9\u00C0-\u024F][A-Za-z0-9\u00C0-\u024F'\-.,:%/]*|\s+|[\s\S]/g) || [];
+  const NO_START = /^[，。、；：！？」』）〕】》〉’”…,.;:!?)\]}%]/;
+  const w = s => {
+    let t = 0;
+    for (const ch of s) {
+      let v = _charW.get(ch);
+      if (v == null) { v = font.widthOfTextAtSize(ch, 1000); _charW.set(ch, v); }
+      t += v;
+    }
+    return t * size / 1000;
+  };
+  const rows = [];
+  let cur = "", curW = 0;
+  for (const u of units) {
+    if (/^\s+$/.test(u)) { if (cur) { cur += " "; curW += w(" "); } continue; }
+    const uw = w(u);
+    if (cur && curW + uw > width + 0.01 && !NO_START.test(u)) { rows.push(cur.trimEnd()); cur = ""; curW = 0; }
+    cur += u;
+    curW += uw;
+  }
+  if (cur.trim()) rows.push(cur.trimEnd());
+  return rows.length ? rows : [""];
+}
+
+// 在原段落的位置蓋白、寫新字。首行 baseline 不動、行距照原本；放不下就每次縮 5%，最小 75%
+function pdfDrawBlock(page, font, rgb, b, text, notes) {
+  const n = b.lines.length;
+  const width = b.x1 - b.x0;
+  const pitch0 = n > 1 ? (b.top - b.bottom) / (n - 1) : b.size * 1.5;
+  const span = (b.top - b.bottom) + b.room;
+  let scale = 1, rows;
+  for (;;) {
+    rows = pdfWrap(text, font, b.size * scale, width);
+    if ((rows.length - 1) * pitch0 * scale <= span + 0.5 || scale <= 0.75) break;
+    scale = Math.max(0.75, +(scale - 0.05).toFixed(2));
+  }
+  const size = b.size * scale, pitch = pitch0 * scale;
+  const lastY = b.top - (rows.length - 1) * pitch;
+  if (scale < 1) notes.shrunk++;
+  if (lastY < b.bottom - b.room - 0.5) notes.overflow++;
+  const rectTop = b.top + b.size * 0.95;
+  const rectBottom = Math.min(b.bottom, lastY) - b.size * 0.3;
+  page.drawRectangle({ x: b.x0 - 1, y: rectBottom, width: width + 2, height: rectTop - rectBottom, color: rgb(1, 1, 1) });
+  rows.forEach((row, k) => {
+    if (row) page.drawText(row, { x: b.x0, y: b.top - k * pitch, size, font, color: rgb(0.08, 0.08, 0.08) });
+  });
+}
+
+async function pdfApply(bytes, blocks, out, onStatus) {
+  await Promise.all([loadScript(LIB.pdflib), loadScript(LIB.fontkit)]);
+  const mb = n => (n / 1048576).toFixed(1);
+  const fontBytes = await loadFont((got, total) =>
+    onStatus("載入中文字型… " + mb(got) + (total ? " / " + mb(total) : "") + " MB（只需一次）"));
+  onStatus("寫回 PDF…");
+  const { PDFDocument, rgb } = window.PDFLib;
+  let pdf;
+  try { pdf = await PDFDocument.load(bytes); }
+  catch (e) {
+    if (/encrypt/i.test(String(e))) throw new Error("這份 PDF 有加密保護，pdf 寫不回去。先解除保護（或列印成新的 PDF）再上傳");
+    throw e;
+  }
+  pdf.registerFontkit(window.fontkit);
+  const font = await pdf.embedFont(fontBytes, { subset: true });
+  const pages = pdf.getPages();
+  const notes = { shrunk: 0, overflow: 0 };
+  for (const b of blocks) {
+    const nt = out[b.i];
+    if (nt == null || nt === b.t) continue;
+    pdfDrawBlock(pages[b.page], font, rgb, b, nt.replace(/\s*\n\s*/g, " ").trim(), notes);
+  }
+  const outBytes = await pdf.save();
+  const list = [];
+  if (notes.shrunk) list.push(notes.shrunk + " 段新字比原本長，字級縮小了一點");
+  if (notes.overflow) list.push(notes.overflow + " 段縮到最小還是放不下、往下溢出了，請翻一下");
+  return { blob: new Blob([outBytes], { type: "application/pdf" }), notes: list };
+}
+
+// ── 上傳流程 ────────────────────────────────────────────
+const $inputbox = document.querySelector(".inputbox");
+const $fileIn = document.getElementById("fileIn");
+
+async function doFile(file) {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (ext === "txt" || ext === "md") {
+    $in.value = await file.text();
+    render($in.value);
+    $in.scrollIntoView({ block: "center", behavior: "smooth" });
+    return;
+  }
+  if (ext !== "docx" && ext !== "pdf") {
+    $cmpPanel.hidden = false;
+    setCmpStatus("只吃 .docx、.pdf（純文字 .txt／.md 會直接填進輸入框）。舊版 .doc 請先在 Word 另存成 .docx。", true);
+    return;
+  }
+  if (!sb || !session) { location.hash = "login"; return; }
+  $cmpPanel.hidden = false;
+  $cmpPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+  if (state.plan !== "paid") {
+    $cmp.innerHTML = "";
+    $cmpStat.textContent = "";
+    setCmpStatus("上傳 Word／PDF、改完照原格式下載，是付費版功能。到「訂閱方案」升級後就能用。", true);
+    return;
+  }
+  if (busy) return;
+  setBusy(true, "處理中…");
+  fileJob = null;
+  $cmpDownload.hidden = true;
+  $cmp.innerHTML = "";
+  $cmpStat.textContent = "";
+  setFileBadge(file.name);
+  setCmpStatus("讀取 " + file.name + "…");
+  try {
+    const docObj = ext === "docx" ? await readDocx(file) : await readPdf(file);
+    const n = docObj.paras.filter(p => p.t.trim()).length;
+    if (!n) throw new Error(ext === "pdf" ? "這份 PDF 抓不到文字（掃描檔、整頁是圖片的 PDF 沒辦法改）" : "檔案裡沒有文字");
+    setFileBadge(file.name + "・" + n + " 段");
+    const out = await runRewrite(docObj.paras, { source: ext });
+    const joinT = a => a.filter(t => t.trim()).join("\n");
+    lastRewrite = { input: joinT(docObj.paras.map(p => p.t)), output: joinT(out) };
+    finishCmp(lastRewrite.input, lastRewrite.output);
+    setCmpStatus("產生檔案中…");
+    const res = await docObj.apply(out, msg => setCmpStatus(msg));
+    fileJob = { blob: res.blob, name: file.name.replace(/\.[^.]+$/, "") + "（改寫）." + ext };
+    $cmpDownload.hidden = false;
+    setCmpStatus(res.notes.length ? res.notes.join("；") + "。" : "");
+  } catch (e) {
+    setCmpStatus("失敗：" + (e && e.message || e), true);
+  } finally {
+    setBusy(false);
+  }
+}
+
+document.getElementById("pickFile").addEventListener("click", () => $fileIn.click());
+$fileIn.addEventListener("change", () => {
+  if ($fileIn.files[0]) doFile($fileIn.files[0]);
+  $fileIn.value = "";
+});
+function dragHasFiles(e) { return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files"); }
+for (const ev of ["dragenter", "dragover"]) {
+  $inputbox.addEventListener(ev, e => { if (dragHasFiles(e)) { e.preventDefault(); $inputbox.classList.add("over"); } });
+}
+$inputbox.addEventListener("dragleave", e => { if (!$inputbox.contains(e.relatedTarget)) $inputbox.classList.remove("over"); });
+$inputbox.addEventListener("drop", e => {
+  $inputbox.classList.remove("over");
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) { e.preventDefault(); doFile(f); }
+});
+
+$cmpDownload.addEventListener("click", () => {
+  if (!fileJob) return;
+  const url = URL.createObjectURL(fileJob.blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileJob.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+});
+
 // ── hash 路由：#home / #plans / #contact / #faq ──
 // 未登入一律鎖在登入頁；登入頁不顯示導覽列。
 // #checkout 與 #thanks 不在導覽列裡：結帳頁只能從訂閱方案帶方案代號進來
-// （#checkout?plan=monthly），感謝頁只能從結帳頁按下付款之後到達。
+// （#checkout?plan=monthly），感謝頁由綠界付完款導回（#thanks?o=訂單編號）。
 const PAGES = ["home", "plans", "checkout", "thanks", "contact", "faq", "login"];
 
+// 顯示用；真正收多少錢由 supabase/functions/ecpay/index.ts 的 PLANS 決定，改價兩邊都要改
 const PLAN_INFO = {
   monthly: { name: "月付　不限次數", price: "NT$180" },
-  team:    { name: "團隊　5 個座位", price: "NT$680" },
 };
+let checkoutPlan = "monthly";
 function fillCheckout(key) {
-  const plan = PLAN_INFO[key] || PLAN_INFO.monthly;
+  checkoutPlan = PLAN_INFO[key] ? key : "monthly";
+  const plan = PLAN_INFO[checkoutPlan];
   document.getElementById("ckName").textContent = plan.name;
   document.getElementById("ckPrice").textContent = plan.price;
   document.getElementById("ckTotal").textContent = plan.price;
+  const $email = document.getElementById("ckEmail");
+  if (!$email.value && session && session.user && session.user.email) $email.value = session.user.email;
 }
 
-// 訂單編號按下付款才產生，存 sessionStorage 讓重新整理不會掉。
-// 接綠界之後這裡換成後端回傳的 MerchantTradeNo。
-let lastOrder = null;
-try { lastOrder = JSON.parse(sessionStorage.getItem("lastOrder") || "null"); } catch (e) {}
+// ── 綠界付款 ─────────────────────────────────────────
+// 按付款：打 ecpay/create 建訂單、拿到綠界要的表單欄位（後端算好 CheckMacValue），
+// 再用隱藏表單 POST 到綠界付款頁（不能用 iframe，綠界會擋）。
+// 付完款綠界把瀏覽器導回 #thanks?o=訂單編號，感謝頁再去資料庫查狀態。
+const $payBtn = document.getElementById("payBtn");
+const $payMsg = document.getElementById("payMsg");
+function setPayMsg(msg) { $payMsg.hidden = !msg; $payMsg.textContent = msg || ""; }
 
-function makeOrderNo() {
-  const d = new Date();
-  const ymd = [d.getFullYear() % 100, d.getMonth() + 1, d.getDate()]
-    .map((n) => String(n).padStart(2, "0")).join("");
-  const chars = "ACDEFGHJKLMNPQRSTUVWXY3456789";  // 拿掉會看錯的 0O1I2Z
-  let tail = "";
-  for (let i = 0; i < 4; i++) tail += chars[Math.floor(Math.random() * chars.length)];
-  return "A-" + ymd + "-" + tail;
+async function callEcpay(path, body) {
+  const { data, error } = await sb.functions.invoke("ecpay/" + path, { body });
+  if (error) {
+    let msg = error.message || String(error);
+    let status = 0;
+    try {
+      status = error.context && error.context.status;
+      const j = await error.context.json();
+      if (j && j.error) msg = j.error;
+    } catch (e) { /* 不是 JSON 就用原訊息 */ }
+    if (status === 401) msg = "登入已失效，請重新登入。";
+    throw new Error(msg);
+  }
+  return data;
 }
 
-document.getElementById("payForm").addEventListener("submit", (e) => {
+function postToEcpay(action, fields) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+  form.style.display = "none";
+  for (const k in fields) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = k;
+    input.value = fields[k];
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
+
+document.getElementById("payForm").addEventListener("submit", async (e) => {
   e.preventDefault();  // 有欄位沒填，瀏覽器會先擋下來，走不到這行
-  lastOrder = { no: makeOrderNo(), email: document.getElementById("ckEmail").value.trim() };
-  try { sessionStorage.setItem("lastOrder", JSON.stringify(lastOrder)); } catch (err) {}
-  location.hash = "thanks";
+  if (!sb || !session) { location.hash = "login"; return; }
+  if (location.protocol === "file:") {
+    setPayMsg("用 file:// 開的頁面綠界導不回來。請用「開啟去ai味小工具.bat」或 node _server.mjs 起本機伺服器再試。");
+    return;
+  }
+  setPayMsg("");
+  $payBtn.disabled = true;
+  $payBtn.textContent = "建立訂單中…";
+  try {
+    const data = await callEcpay("create", {
+      plan: checkoutPlan,
+      email: document.getElementById("ckEmail").value.trim(),
+      taxId: document.getElementById("ckTax").value.trim(),
+      returnTo: location.origin + location.pathname,
+    });
+    $payBtn.textContent = "前往綠界…";
+    postToEcpay(data.action, data.fields);
+  } catch (err) {
+    setPayMsg("建立訂單失敗：" + err.message);
+    $payBtn.disabled = false;
+    $payBtn.textContent = "前往綠界付款";
+  }
 });
+
+// ── 感謝頁：查訂單狀態 ────────────────────────────────
+// 綠界的通知（notify）和導回（return）誰先到不一定，訂單可能還是 pending，
+// 每 2 秒查一次、最多查 15 次；付款成功就重新讀方案讓額度列更新。
+let thanksTimer = null;
+function renderThanks(order) {
+  const $ok = document.getElementById("thanksOk");
+  const $title = document.getElementById("thanksTitle");
+  const $text = document.getElementById("thanksText");
+  const $small = document.getElementById("thanksSmall");
+  const no = order ? order.merchant_trade_no : "—";
+  if (!order) {
+    $ok.textContent = "找不到訂單";
+    $title.innerHTML = "這張訂單不是你的，<br>或根本不存在";
+    $text.textContent = "如果你剛付完款，先確認登入的是同一個帳號。";
+    $small.textContent = "";
+    return;
+  }
+  if (order.status === "paid") {
+    $ok.textContent = "✓ 付款完成";
+    $title.innerHTML = "謝謝訂閱，<br>訂單 <span>" + no + "</span>";
+    $text.textContent = "付費版已開通" + (state.paidUntil ? "，用到 " + fmtDate(state.paidUntil) + "。" : "。")
+      + (order.simulated ? "（這筆是綠界模擬付款）" : "");
+    $small.textContent = "發票會另外寄到 " + (order.email || "你的信箱") + "。";
+    return;
+  }
+  if (order.status === "failed") {
+    $ok.textContent = "付款失敗";
+    $title.innerHTML = "這筆沒有成功，<br>訂單 <span>" + no + "</span>";
+    $text.textContent = "綠界回：" + (order.rtn_msg || order.rtn_code || "未知原因") + "。沒有扣款，可以回方案頁再試一次。";
+    $small.textContent = "";
+    return;
+  }
+  $ok.textContent = "確認中";
+  $title.innerHTML = "跟綠界確認付款，<br>訂單 <span>" + no + "</span>";
+  $text.textContent = "通常幾秒內就好，這頁會自己更新。";
+  $small.textContent = "刷卡成功但這頁一直沒動，先重新整理；還是沒有再寫信來，附上訂單編號。";
+}
+
+async function showThanks(no) {
+  clearTimeout(thanksTimer);
+  let tries = 0;
+  const tick = async () => {
+    if (hashPage(location.hash) !== "thanks") return;
+    const { data: order } = await sb.from("orders")
+      .select("merchant_trade_no, status, email, rtn_code, rtn_msg, simulated, paid_at")
+      .eq("merchant_trade_no", no).maybeSingle();
+    if (order && order.status === "paid") await loadProfile();
+    renderThanks(order);
+    if (order && order.status === "pending" && ++tries < 15) thanksTimer = setTimeout(tick, 2000);
+  };
+  renderThanks({ merchant_trade_no: no, status: "pending" });
+  tick();
+}
 
 function hashPage(h) { return (h || "").replace("#", "").split("?")[0]; }
 
@@ -1254,12 +2171,10 @@ function route() {
   if (!auth) p = "login";
   if (p === "checkout") fillCheckout(new URLSearchParams(query).get("plan"));
   if (p === "thanks") {
-    // 沒有訂單就代表沒付過款，直接打網址進來一律送回方案頁
-    if (!lastOrder) { p = "plans"; location.hash = "plans"; }
-    else {
-      document.getElementById("thanksOrder").textContent = lastOrder.no;
-      document.getElementById("thanksEmail").textContent = lastOrder.email || "你的信箱";
-    }
+    // 網址一定要帶訂單編號（綠界導回時帶的 #thanks?o=...），沒有就送回方案頁
+    const no = new URLSearchParams(query).get("o");
+    if (!no || !sb) { p = "plans"; location.hash = "plans"; }
+    else showThanks(no);
   }
   for (const name of PAGES) {
     document.getElementById("page-" + name).classList.toggle("on", name === p);

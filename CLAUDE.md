@@ -9,14 +9,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 這是什麼
 
-「去 AI 味檢查」：貼上文字後用一組正則掃出中文 AI 腔用詞的單頁工具。純前端、零相依、離線可用，不上傳、不呼叫 API、不改字，只標出命中處。
+「校稿王」：貼上文字後用一組正則掃出中文 AI 腔用詞，再按一下交給 Claude 改寫的單頁工具。掃描純前端、離線可用；改寫、登入、方案、付款走 Supabase（Auth + Edge Functions + Postgres）。
 
-`index.html` 就是整個應用程式——CSS、markup、規則、掃描邏輯全在同一個檔案裡（約 540 行）。沒有 build、沒有 bundler、沒有 npm 相依、沒有測試框架。改完存檔重新整理瀏覽器就是全部的開發循環。
+`index.html` 就是整個前端——CSS、markup、規則、掃描、改寫、上傳檔案、路由全在同一個檔案裡（約 2200 行）。沒有 build、沒有 bundler、沒有 npm 相依、沒有測試框架。改完存檔重新整理瀏覽器就是全部的開發循環。後端在 `supabase/`：`functions/rewrite`（改寫）、`functions/ecpay`（綠界金流）、`migrations/`（profiles／usage／rewrites／orders）。
 
 ## 執行方式
 
 ```
-# 最快：直接用瀏覽器開 index.html（file:// 就能跑，功能不打折）
+# 最快：直接用瀏覽器開 index.html（file:// 就能跑，只有 PDF 輸出要走伺服器）
 
 # 起本機伺服器（手機同網段測試用）
 node _server.mjs            # http://localhost:8731，會自動開瀏覽器
@@ -25,6 +25,8 @@ node _server.mjs            # http://localhost:8731，會自動開瀏覽器
 `開啟去ai味小工具.bat` 是給非工程使用者的雙擊入口，會找到資料夾、檢查 node 存在、再跑 `_server.mjs`。
 
 `_server.mjs` 只是個靜態檔案伺服器（固定 port 8731、`Cache-Control: no-store`、擋 `..` 跳出資料夾）。port 被占用時它不會報錯，而是判定「已經有一個在跑」，直接開瀏覽器後自行結束。
+
+`file://` 直接開時掃描、改寫、Word 上傳都能跑，只有 **PDF 輸出**不行（`fetch` 抓不到 `assets/fonts/` 的字型），要走伺服器。
 
 ## 架構
 
@@ -37,9 +39,28 @@ node _server.mjs            # http://localhost:8731，會自動開瀏覽器
 - **anchored**：命中位置是否對得上 `plain`。HTML 輸入下 `scope:"raw"` 的規則掃的是原始字串，位置對不上，所以 `anchored:false`，只列清單不標紅。
 - **hard vs soft**：`soft` 命中（破折號、`從…到…`、`非常/相當/極為`）分開計數、用墨色虛線標，免得每篇都被破折號洗版、讓數字失去意義。
 
+### 登入、方案、改寫
+
+- 未登入一律鎖在 `#login`（Google OAuth 或 Email 密碼）。`route()` 是 hash 路由，頁面清單在 `PAGES`。
+- 方案在 `profiles.plan`（free／paid）+ `paid_until`（null 是手動標記的永久付費）。免費版每月 `FREE_MONTHLY` 篇改寫，額度由 Edge Function 呼叫 `consume_quota()` 原子扣，**前端的 `FREE_MONTHLY` 要跟 `functions/rewrite/index.ts` 一致**。手動開通：`update public.profiles set plan = 'paid' where id = '<uuid>'`。
+- 改寫流程 `runRewrite(paras, {source})`：文章先切段（`splitParas`，`i` 就是位置），再依 `CHUNK_CHARS` 分批打 `rewrite`，逐批回填左右對照區。`source` 是 `paste`／`docx`／`pdf`，後端看到 `docx`／`pdf` 且非付費直接 403。
+- 前端用的是 publishable key，閘道層驗不了 JWT，所以 `config.toml` 把 `verify_jwt` 關掉、函式裡自己 `auth.getUser(token)`。
+
+### 上傳檔案（付費版）
+
+檔案全程在瀏覽器裡處理，只有文字段落離開電腦。程式在 `// ── 上傳檔案` 到 `// ── 上傳流程` 之間，函式庫（JSZip、pdf.js、pdf-lib、fontkit）只在真的丟檔案時才從 CDN 載。
+
+- **docx**：JSZip 拆 `word/document.xml`，每個 `w:p` 底下的 `w:t`／`w:tab`／`w:br` 合成一段。寫回時挑「不在超連結裡、字數最多」的 `w:t` 當宿主、其他清空，段落樣式與宿主 run 的格式都留著；段內混合格式因此會統一成主要格式。只碰 `document.xml`，頁首頁尾、註腳不動。
+- **pdf**：pdf.js 抽字 → `pdfLines()` 依 baseline 併行 → `pdfBlocks()` 依字級、水平重疊、行距併段（首行縮排、句號提早收尾視為新段）。寫回是 **蓋白再寫新字**，不是真的編輯：原字還在白框底下，有色背景會露白塊。新字塞不下先往下借空白（`room`），再每次縮 5% 到最小 75%，再不行就溢出並在狀態列提醒。
+- **字型三個坑，改字型前先看**：
+  1. fontkit 對 CID-keyed OTF（Noto CJK 原版）做 subset 會壞字，只能用 TrueType 外框；而且字形資料要 **4 bytes 對齊**，不然 loca 短格式除以 2 會錯位、一樣壞。`assets/fonts/NotoSansTC-Regular.woff` 是用 fontTools 定格 wght=400、subset 到 Big5+HKSCS、去 hinting、`glyf.padding = 4` 做出來的，來源與步驟寫在旁邊的 `OFL.txt`。
+  2. fontkit 直接吃 WOFF 時每碰一個字形就把整個 glyf 表重新解壓一次（存一份 PDF 要 9 秒），所以 `loadFont()` 下載後先用 `DecompressionStream` 解成 TTF（`woffToTtf`）再交給它，0.3 秒。WOFF2 不行，fontkit 的 subset 讀不到它的 glyf。
+  3. Chrome 印出來的 PDF 抽字會把「一、而、生」對到康熙部首碼位（U+2E80–2FDF），`pdfLines()` 逐字 NFKC 正規化回去。不能整串 NFKC，全形標點會被轉成半形。
+- 量字寬走 `_charW` 逐字快取：GPOS 已拆掉所以寬度就是逐字相加，別改回逐段呼叫 `widthOfTextAtSize`（每次 ~10 ms）。
+
 ## 規則區塊
 
-九成的修改都發生在 `<script>` 最上方 `===== 規則從這裡開始 =====` 到 `===== 規則到這裡結束 =====` 之間的 `RULES` 陣列（約 index.html:265-317）。格式 `[正則, 類別, 說明, 選項]`：
+九成的修改都發生在 `<script>` 最上方 `===== 規則從這裡開始 =====` 到 `===== 規則到這裡結束 =====` 之間的 `RULES` 陣列（約 index.html:960-1020，不是在檔案最上面，規則前面還有 CSS 與 markup）。格式 `[正則, 類別, 說明, 選項]`：
 
 - `scope`：`"text"`（預設，掃去標籤後的內文）／`"raw"`（掃原始輸入，例如抓 Markdown 殘留）／`"heading"`（只掃像標題的行：單獨成行、30 字內、結尾沒標點，或 `#` 開頭）
 - `soft: true`：待確認，不一定要改
@@ -66,3 +87,4 @@ node _server.mjs            # http://localhost:8731，會自動開瀏覽器
 
 - `開啟去ai味小工具.bat` **必須維持純 ASCII**：cmd.exe 在 `chcp` 生效前會誤解非 ASCII 位元組，導致路徑與訊息壞掉。所有中文輸出都由 `_server.mjs` 印。`.gitattributes` 已把 `*.bat` 釘成 CRLF。
 - Commit message 用中文（`feat: ...`）。
+- `assets/fonts/NotoSansTC-Regular.woff` 是 OFL 授權的衍生字型，改動或換字型時 `OFL.txt` 的來源與修改說明要一起更新。

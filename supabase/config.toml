@@ -1,0 +1,10 @@
+project_id = "aisloptool"
+
+# 前端用的是新式 publishable key（不是 JWT），閘道層驗不了，
+# 改在函式裡自己用 auth.getUser(token) 驗。
+[functions.rewrite]
+verify_jwt = false
+
+# 綠界回呼（notify / return）沒有 JWT；create 一樣在函式裡自己驗。
+[functions.ecpay]
+verify_jwt = false
