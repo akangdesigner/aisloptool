@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /demo.html
+Disallow: /需求地圖.html
+
+Sitemap: https://aitool.aiqkangber.com/sitemap.xml
