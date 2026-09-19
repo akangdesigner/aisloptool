@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>校稿王 試玩版</title>
+<link rel="icon" href="brand/mark/mark-64.png">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* 試玩版：只有掃描器。純前端、不上傳、不改字。與 index.html 共用同一套墨線版面。 */
+  :root{
+    --paper:#efe9dd;   /* 紙面底色 */
+    --panel:#faf7f0;   /* 分格內底色 */
+    --tone:#ded7c8;    /* 圖片格／網點底 */
+    --ink:#17150f;     /* 墨線 */
+    --red:#c0392b;     /* 朱紅 */
+    --dim:#5b544a;
+    --dimmer:#8a8272;
+    --rule:#b9b1a1;    /* 虛線分隔 */
+    --hl:#f3c9c3;      /* 命中螢光 */
+    --font-mincho:"Zen Old Mincho","Yu Mincho","Noto Serif TC","Songti TC",serif;
+    --font-ui:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Segoe UI",sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-ui); font-size:15px; line-height:1.85;
+  }
+  a{color:var(--red)}
+  a:hover{color:var(--ink)}
+  ::selection{background:#f6d9d4}
+  button:focus-visible, a:focus-visible, textarea:focus-visible{outline:3px solid var(--red); outline-offset:2px}
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 28px 96px}
+  @media (max-width:600px){ .wrap{padding:16px 16px 64px} }
+
+  /* ── 刊頭 ─────────────────────────────── */
+  .masthead{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    border-bottom:4px solid var(--ink); padding-bottom:12px; flex-wrap:wrap;
+  }
+  .masthead h1{margin:0; line-height:0}
+  .masthead h1 img{display:block; height:52px; width:auto}
+  .masthead-right{display:flex; align-items:center; gap:12px; padding-bottom:6px; flex-wrap:wrap}
+  .tagline{font-size:12.5px; letter-spacing:.2em; color:var(--dim); white-space:nowrap}
+  .ver{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dim);
+    border:1px solid var(--ink); padding:2px 7px; white-space:nowrap;
+  }
+  .seal{
+    font-family:var(--font-mincho); font-size:13px; font-weight:700; color:#fff;
+    background:var(--red); padding:5px 9px; letter-spacing:.14em;
+  }
+
+  /* ── 圖片分格：圖檔不存在時 img 自我移除、露出網點底提示 ── */
+  .slot{
+    position:relative; overflow:hidden; max-width:100%;
+    background:radial-gradient(var(--rule) 1px,transparent 1.4px) 0 0/7px 7px, var(--tone);
+  }
+  .slot img{position:relative; z-index:1; display:block; width:100%; height:100%; object-fit:cover}
+  .slot-hint{
+    position:absolute; inset:0; z-index:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:10px; font-family:var(--font-mincho); font-size:13px;
+    letter-spacing:.14em; color:#7d7566;
+  }
+  .hero{width:100%; height:340px; border:3px solid var(--ink); border-top:0}
+  .strip{margin-top:16px; aspect-ratio:2172/724; border:3px solid var(--ink)}
+  .side{margin-top:12px; aspect-ratio:4/3; border:3px solid var(--ink)}
+  .episode{
+    position:absolute; z-index:2; pointer-events:none; background:var(--paper);
+    font-family:var(--font-mincho); font-weight:700; letter-spacing:.2em;
+  }
+  .episode-bl{left:0; bottom:0; padding:10px 22px 8px; font-size:15px;
+    border-top:4px solid var(--ink); border-right:4px solid var(--ink)}
+
+  /* ── 版面分欄 ─────────────────────────── */
+  .cols{display:grid; grid-template-columns:1.5fr 1fr; gap:16px; margin-top:16px; align-items:start}
+  .cols > *{min-width:0}
+  @media (max-width:980px){
+    .cols{grid-template-columns:1fr}
+    .hero{height:240px}
+    .masthead h1 img{height:38px}
+  }
+
+  /* ── 通用按鈕 ─────────────────────────── */
+  .btn{
+    display:inline-block; text-align:center; text-decoration:none; cursor:pointer;
+    font-family:inherit; font-size:13px; font-weight:700; letter-spacing:.14em;
+    padding:12px 22px; border:0;
+  }
+  .btn.solid{background:var(--ink); color:var(--paper)}
+  .btn.solid:hover{background:#3a352a; color:var(--paper)}
+  .btn.ghost{background:var(--panel); color:var(--ink); border:3px solid var(--ink)}
+  .btn.ghost:hover{background:var(--paper); color:var(--ink)}
+  .btn-row{display:flex; gap:12px; flex-wrap:wrap}
+
+  /* ── 標語格 ───────────────────────────── */
+  .lede{border:3px solid var(--ink); background:var(--panel); padding:26px 28px}
+  .lede h2{
+    font-family:var(--font-mincho); font-size:30px; font-weight:900;
+    line-height:1.5; margin:0 0 12px; text-wrap:balance;
+  }
+  .lede p{margin:0 0 20px; font-size:15.5px; color:var(--dim); text-wrap:pretty}
+
+  .howto-box{
+    border:3px solid var(--ink); padding:18px 20px;
+    background:radial-gradient(var(--ink) 1px,transparent 1.2px) 0 0/8px 8px, var(--panel);
+  }
+  .howto{background:var(--panel); border:3px solid var(--ink); padding:16px 18px}
+  .howto .t{font-family:var(--font-mincho); font-size:13px; letter-spacing:.18em;
+    color:var(--dim); margin-bottom:10px}
+  .howto ol{margin:0; padding-left:1.4em; font-size:14.5px; line-height:2}
+
+  /* ── 六類規則 ─────────────────────────── */
+  .rules6{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .rules6 .r{padding:18px 20px; border-right:1px dashed var(--rule)}
+  .rules6 .r:last-child{border-right:0}
+  .rules6 .r .n{font-family:var(--font-mincho); font-size:17px; font-weight:700}
+  .rules6 .r .d{font-size:13px; color:var(--dim)}
+
+  /* ── 輸入格 ───────────────────────────── */
+  .inputbox{border:3px solid var(--ink); background:var(--panel)}
+  #in{
+    width:100%; min-height:220px; resize:vertical; display:block;
+    border:0; background:transparent; padding:20px 22px;
+    font:inherit; line-height:1.95; color:var(--ink); outline:none;
+  }
+  #in::placeholder{color:#a89f8e}
+  .btnbar{display:flex; border-top:3px solid var(--ink)}
+  .btnbar button{
+    flex:1; font:inherit; font-size:13px; font-weight:700; letter-spacing:.14em;
+    padding:11px 0; border:0; cursor:pointer;
+  }
+  #sample{background:var(--panel); color:var(--ink); border-right:3px solid var(--ink)}
+  #sample:hover{background:var(--paper)}
+  #clear{background:var(--ink); color:var(--paper)}
+  #clear:hover{background:#3a352a}
+
+  /* ── 計分格（網點底）───────────────────── */
+  .statbox{
+    border:3px solid var(--ink); padding:18px 20px;
+    background:radial-gradient(var(--ink) 1px,transparent 1.2px) 0 0/8px 8px, var(--panel);
+  }
+  .counts{display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap;
+    background:var(--panel); border:3px solid var(--ink); padding:12px 16px}
+  .count{display:flex; align-items:baseline; gap:7px}
+  .count .n{font-family:var(--font-mincho); font-size:38px; line-height:1; font-weight:900;
+    font-variant-numeric:tabular-nums}
+  .count .n.red{color:var(--red)}
+  .count .lab{font-size:11.5px; letter-spacing:.2em; white-space:nowrap}
+  #meta{
+    margin-top:12px; background:var(--panel); border:3px solid var(--ink);
+    padding:8px 16px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em;
+  }
+  #meta .pass{color:var(--red); font-weight:500}
+  .legend{
+    margin-top:12px; background:var(--panel); border:3px solid var(--ink);
+    padding:10px 16px; font-size:12.5px; color:var(--dim); line-height:2;
+  }
+  .legend mark{cursor:default}
+
+  /* ── 分格通用 ─────────────────────────── */
+  .panel{border:3px solid var(--ink); background:var(--panel)}
+  .panel-h{
+    font-family:var(--font-mincho); font-size:14px; font-weight:700; letter-spacing:.18em;
+    margin:0; padding:10px 20px; border-bottom:3px solid var(--ink);
+  }
+  .panel-h.invert{background:var(--ink); color:var(--paper)}
+
+  /* ── 全文 ─────────────────────────────── */
+  #out{padding:24px 24px 28px; line-height:2.1; white-space:pre-wrap; word-break:break-word;
+    max-height:62vh; overflow:auto}
+  .empty{color:var(--dimmer); font-size:14px}
+  mark{background:transparent; color:inherit; padding:0; cursor:help}
+  mark.hard{background:linear-gradient(transparent 62%,var(--hl) 62%); border-bottom:2px solid var(--red)}
+  mark.soft{border-bottom:2px dashed var(--ink)}
+  mark.flash{background:var(--hl); box-shadow:0 0 0 3px var(--hl)}
+
+  /* ── 命中清單 ─────────────────────────── */
+  #list{max-height:62vh; overflow:auto}
+  #list > .empty{display:block; padding:16px 18px}
+  .grp{
+    font-family:var(--font-mincho); font-size:12px; letter-spacing:.18em; color:var(--dim);
+    padding:12px 18px 5px; background:#f2ede2; border-bottom:1px dashed var(--rule);
+  }
+  .hit{padding:14px 18px; border-bottom:1px dashed var(--rule); cursor:pointer}
+  .hit:last-child{border-bottom:0}
+  .hit:hover{background:#f2ede2}
+  .hit .head{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap}
+  .hit .w{font-family:var(--font-mincho); font-size:17px; font-weight:700}
+  .badge{font-size:10px; font-weight:700; letter-spacing:.1em; padding:1px 6px; flex:none}
+  .badge.red{background:var(--red); color:#fff}
+  .badge.ink{background:var(--ink); color:var(--paper)}
+  .badge.soft{background:transparent; color:var(--ink); border:1px solid var(--ink)}
+  .hit .tip{font-size:13px; color:var(--dim); margin-top:4px}
+  .hit .ctx{font-family:var(--font-mono); font-size:11.5px; color:var(--dimmer); margin-top:6px;
+    word-break:break-all}
+
+  /* ── 自己過一遍 ───────────────────────── */
+  .checklist-panel{margin-top:16px}
+  .checklist-panel .panel-h{font-size:15px; padding:11px 20px}
+  .checklist{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .check{padding:20px 22px; border-right:1px dashed var(--rule)}
+  .check:last-child{border-right:0}
+  .check .q{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:8px}
+  .check .a{font-size:13.5px; color:var(--dim); line-height:1.9}
+
+  /* ── 頁尾 ─────────────────────────────── */
+  .footer{margin-top:24px; padding-top:14px; border-top:3px solid var(--ink);
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    font-size:12px; color:var(--dimmer)}
+
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <h1><img src="brand/lockup/lockup-horizontal.png" alt="校稿王"></h1>
+    <div class="masthead-right">
+      <span class="tagline">貼上就掃・改字還是人來</span>
+      <span class="ver">試玩版</span>
+      <span class="seal">校閱</span>
+    </div>
+  </header>
+
+  <div class="hero slot">
+    <img src="assets/hero.png" alt="" onerror="this.remove()">
+    <span class="slot-hint">橫幅滿版圖片</span>
+    <div class="episode episode-bl">第一話　把字貼進來</div>
+  </div>
+
+  <div class="cols">
+    <section class="lede">
+      <h2>貼上文字，標出中文 AI 腔。</h2>
+      <p>43 條規則分六類，命中處畫底線、寫改法。掃描全部在你的瀏覽器裡跑：不上傳、不叫 API、不動你的字。下面已經放了一段範例，按「清空」貼你自己的。</p>
+      <div class="btn-row">
+        <button class="btn solid" id="tryOne" type="button">跳到範例結果</button>
+        <a class="btn ghost" href="#rules">六類抓什麼</a>
+      </div>
+    </section>
+
+    <section class="howto-box">
+      <div class="howto">
+        <div class="t">三秒說明</div>
+        <ol>
+          <li>貼上一段文字（純文字或 HTML 都可以）</li>
+          <li>命中處畫底線，滑鼠移上去看改法</li>
+          <li>右邊清單點一筆，跳到那個位置</li>
+        </ol>
+      </div>
+      <div class="side slot">
+        <img src="assets/side.png" alt="" onerror="this.remove()">
+        <span class="slot-hint">小插圖：橫向 4:3</span>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" id="rules" style="margin-top:16px">
+    <h2 class="panel-h" style="font-size:15px;padding:11px 20px">六類規則</h2>
+    <div class="rules6">
+      <div class="r"><div class="n">A 灌水開頭</div><div class="d">深入探討、先誠實講</div></div>
+      <div class="r"><div class="n">B 浮誇強調</div><div class="d">至關重要、觸目驚心</div></div>
+      <div class="r"><div class="n">C 情緒假詞</div><div class="d">懂的都懂</div></div>
+      <div class="r"><div class="n">D AI句型</div><div class="d">這不是…而是…、破折號</div></div>
+      <div class="r"><div class="n">E 格式殘留</div><div class="d">有人認為、** 沒清掉</div></div>
+      <div class="r"><div class="n">F 抽象化</div><div class="d">效率的提升、某個午後</div></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div class="inputbox">
+      <textarea id="in" placeholder="把要檢查的文字貼進來（純文字或 HTML 都可以）" spellcheck="false"></textarea>
+      <div class="btnbar">
+        <button id="sample" type="button">放回範例</button>
+        <button id="clear" type="button">清空</button>
+      </div>
+    </div>
+    <div class="statbox">
+      <div class="counts">
+        <div class="count"><span class="n red" id="hardN">0</span><span class="lab">硬命中</span></div>
+        <div class="count"><span class="n" id="softN">0</span><span class="lab">軟命中</span></div>
+      </div>
+      <div id="meta">等著你貼東西進來</div>
+      <div class="legend">
+        <mark class="hard">朱紅底線</mark>　是該改的硬命中<br>
+        <mark class="soft">墨色虛線</mark>　是待確認的軟命中，像破折號、「從…到…」，你自己判斷
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <section class="panel">
+      <h2 class="panel-h invert">全文　命中處畫底線</h2>
+      <div id="out"><span class="empty">還沒有內容。</span></div>
+    </section>
+    <section class="panel">
+      <h2 class="panel-h">命中清單　點一筆跳到位置</h2>
+      <div id="list"><span class="empty">還沒有內容。</span></div>
+    </section>
+  </div>
+
+  <div class="strip slot">
+    <img src="assets/strip.png" alt="" onerror="this.remove()">
+    <span class="slot-hint">橫幅插頁：超寬 6:1</span>
+  </div>
+
+  <section class="panel checklist-panel">
+    <h2 class="panel-h">正則抓不到的，交付前自己過一遍</h2>
+    <div class="checklist">
+      <div class="check">
+        <div class="q">能不能拍成電影？</div>
+        <div class="a">有溫度、氣味、畫面、動作才是真寫作；拍不出來就是 AI 味。</div>
+      </div>
+      <div class="check">
+        <div class="q">唸出聲會不會像作文範本？</div>
+        <div class="a">太順、太對稱、太工整就重寫。句子要有長有短。</div>
+      </div>
+      <div class="check">
+        <div class="q">看得到「誰」嗎？</div>
+        <div class="a">寫得出阿芳穿藍外套喝冰美式，而不是「一位朋友」。</div>
+      </div>
+      <div class="check">
+        <div class="q">具體錨點是真的嗎？</div>
+        <div class="a">不能為了具體而編故事；匿名化的客戶情境要標「示意」。</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span>掃描在本機跑，文字不離開你的瀏覽器。</span>
+    <span>校稿王　試玩版</span>
+  </div>
+
+</div>
+<script>
+// ============================================================
+// ===== 規則從這裡開始（與 index.html 的 RULES 同一份）=====
+// 欄位：[正則, 類別, 說明, 選項]
+// 選項 scope: "text"(預設，掃內文) / "raw"(掃原始輸入) / "heading"(只掃像標題的行)
+// 選項 soft: true 代表「待確認」，不一定要改，用墨色虛線標
+// ============================================================
+const RULES = [
+  // A. 灌水開頭／教科書過渡詞
+  [/深入(探討|挖掘|了解)/g, "A 灌水開頭", "AI 灌水開頭，直接講下一件事"],
+  [/讓我們深入/g, "A 灌水開頭", "說教式開場"],
+  [/值得注意的是/g, "A 灌水開頭", "說教式過渡詞"],
+  [/必須記住/g, "A 灌水開頭", "說教式過渡詞"],
+  [/(綜上所述|總而言之)/g, "A 灌水開頭", "僵化結尾套話"],
+  [/(先)?(誠實|老實|坦白)(講|說)/g, "A 灌水開頭", "宣告式誠實開場，真要誠實的人直接講那件事"],
+  [/說(真的|實話)/g, "A 灌水開頭", "宣告式開場，直接講"],
+  [/(不得不說|不諱言)/g, "A 灌水開頭", "宣告式開場"],
+  [/(我|這篇文?章?|本文|接下來|下面)(會|將)(說|講|告訴|介紹|教你|帶你|分享|談談?)/g, "A 灌水開頭", "宣告式『我會說清楚／這篇會告訴你』，本來就會講不用先昭告，直接講那件事"],
+  [/帶你(一起)?(了解|看懂|搞懂|認識|走過|拆解)/g, "A 灌水開頭", "宣告式導引，直接講內容"],
+  [/(把)?話(講|說)在?前(面|頭)/g, "A 灌水開頭", "宣告式『把話講在前面』，直接講那件事就好"],
+  [/舉個?[^，。！？]{0,8}(例子|案例|例來說)/g, "A 灌水開頭", "宣告式『舉例』報幕，直接把例子講出來不用先昭告"],
+  [/先(交代|說明|解釋)(一下)?[^，。！？]{0,12}(是什麼|背景)?[。：]/g, "A 灌水開頭", "宣告式『先交代／先說明』報幕，刪掉這句直接講內容"],
+  [/比如說/g, "A 灌水開頭", "『比如說』當開場報幕，直接講例子"],
+  [/(講|說|聊|談|介紹)完(了)?[，,]\s*(來|這段|接下來|下面|下一)/g, "A 換段過場", "『X 講完了，來接 Y』換段過場報幕，直接寫下一段內容"],
+  [/一句話(講完|總結|概括)[：:]/g, "A 灌水開頭", "宣告式『一句話講完：』報幕，直接把那句話寫出來"],
+  [/長(什麼|怎)樣/g, "A 懸念標題", "「…長什麼樣」吊胃口標題，改成直接說要分享什麼＋吃關鍵字", {scope:"heading"}],
+  [/^[\s#]*先(搞懂|弄懂|了解|認識|理解|搞清楚)/g, "A 懸念標題", "標題「先搞懂…」是對讀者下指令的報幕腔，直接講主題", {scope:"heading"}],
+  [/簡單(來說|講|說)[，：:]/g, "A 灌水開頭", "『簡單來說』開場報幕，直接講"],
+  [/來(接|看)真的/g, "A 換段過場", "『來接真的／來看真的』空過場，直接講內容"],
+  [/真正(好玩|有趣|精彩|厲害)的(才|就)(開始|來了)/g, "A 換段過場", "『真正好玩的才開始』灌水過場，刪掉直接講"],
+  [/好戲(才|就)?(在後頭|登場|開始)/g, "A 換段過場", "灌水過場，刪掉直接講"],
+  // B. 浮誇強調詞
+  [/至關重要/g, "B 浮誇強調", "用數字或後果代替"],
+  [/(樞紐的|關鍵的一(環|步))/g, "B 浮誇強調", "浮誇強調，講具體後果"],
+  [/不可磨滅/g, "B 浮誇強調", "空洞誇飾（不可磨滅的印記）"],
+  [/凸顯了|強調了/g, "B 浮誇強調", "抽象當主詞"],
+  [/(刺眼|觸目驚心|怵目驚心|血淋淋|發人深省|耐人尋味)/g, "B 浮誇強調", "給抽象事物套虛無感官／情緒形容詞，直接講事實"],
+  // C. 社群情緒假詞
+  [/懂的都懂/g, "C 情緒假詞", "裝熟空話"],
+  [/接住(你|妳)的情緒/g, "C 情緒假詞", "做作感性"],
+  // D. 經典 AI 句型
+  [/這不是[^，。！？]{0,20}，[^，。！？]{0,8}而是/g, "D AI句型", "「這不是…而是…」工整反轉金句"],
+  [/不僅是[^，。！？]{0,20}，[^，。！？]{0,8}更是/g, "D AI句型", "「不僅是…更是…」無限昇華"],
+  [/從[^，。！？]{1,12}到[^，。！？]{1,12}，/g, "D AI句型", "「從…到…」假範圍（確認跨度合理再保留）", {soft:true}],
+  [/(閃得掉|躲得掉|躲不過|逃不掉)/g, "D AI句型", "硬找俏皮動詞包裝「可以避免」，刪掉或改平實的「都能避開」"],
+  [/根本不(在|是)(同一個|同一回|一回)/g, "D AI句型", "「根本不在同一個賽道」式聳動斷言，只有音量沒有資訊，改講具體差異"],
+  [/出手/g, "D AI句型", "「出手」當「操作」用的武俠腔，改「動手／要人操作」"],
+  [/——/g, "D AI句型", "破折號濫用，99% 秒判 AI；確認真的需要再保留", {soft:true}],
+  // E. 空洞讚美／模糊歸因／格式殘留
+  [/(燈塔|見證|文化遺產中心)/g, "E 空洞讚美", "空洞讚美，換可驗證事實"],
+  [/批評者認為|有人認為/g, "E 模糊歸因", "歸因要指名"],
+  [/\*\*|(?<!#)##(?!#)/g, "E 格式殘留", "Markdown 殘留跑進正文", {scope:"raw"}],
+  // F. 抽象化／概念名詞化
+  [/(自我的探索|認同感的建構|效率的提升|價值的展現)/g, "F 抽象化", "名詞化換動詞口語"],
+  [/某個?(午後|夜晚|時刻)/g, "F 缺錨點", "換真實時間"],
+  [/大幅(提升|改善|增加|降低)/g, "F 缺錨點", "換具體數字"],
+  // 老形容詞（既有風格規則）
+  [/(非常|相當|極為)/g, "風格 贅詞", "避免空形容詞", {soft:true}],
+];
+// ===== 規則到這裡結束 =====
+
+const CAT_ORDER = ["A", "B", "C", "D", "E", "F", "風"];
+// 類別徽章兩色輪替（A 朱紅／B 墨／C 朱紅…），軟命中改外框
+const CAT_TONE = { A:"red", B:"ink", C:"red", D:"ink", E:"red", F:"ink", 風:"ink" };
+
+const $in = document.getElementById("in");
+const $out = document.getElementById("out");
+const $list = document.getElementById("list");
+const $hardN = document.getElementById("hardN");
+const $softN = document.getElementById("softN");
+const $meta = document.getElementById("meta");
+const SCROLL = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// 有 HTML 標籤才去標籤；區塊標籤換成換行，讓標題自成一行
+function hasTags(raw) {
+  return /<\/?[a-z][a-z0-9]*(\s[^>]*)?>/i.test(raw);
+}
+function toPlain(raw) {
+  return raw
+    .replace(/<\s*\/?\s*(h[1-6]|p|div|li|ul|ol|tr|td|section|article|blockquote|br|hr|figure|figcaption)(\s[^>]*)?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// 像標題的行：單獨成行、30 字內、結尾沒有標點，或以 # 開頭
+function isHeadingLine(line) {
+  const t = line.trim();
+  if (!t) return false;
+  if (/^#{1,6}\s*/.test(t)) return true;
+  return t.length <= 30 && !/[。，、；！？!?,.;:：]$/.test(t);
+}
+
+function ctxOf(src, start, end) {
+  return src.slice(Math.max(0, start - 20), Math.min(src.length, end + 20))
+            .replace(/\s+/g, " ").trim();
+}
+
+function runRule(rule, src, base, hits, ctxSrc, anchored) {
+  const [re, cat, tip, opt] = rule;
+  const soft = !!(opt && opt.soft);
+  re.lastIndex = 0;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    if (m[0].length === 0) { re.lastIndex++; continue; }
+    const start = base + m.index;
+    const end = start + m[0].length;
+    hits.push({
+      start, end, word: m[0], cat, tip, soft, anchored,
+      ctx: ctxOf(anchored ? ctxSrc : src, anchored ? start : m.index, anchored ? end : m.index + m[0].length),
+    });
+    if (!re.global) break;
+  }
+}
+
+function scan(raw) {
+  const tagged = hasTags(raw);
+  const plain = tagged ? toPlain(raw) : raw;
+  const hits = [];
+
+  // 行索引（給 heading 規則用）
+  const lines = [];
+  let off = 0;
+  for (const line of plain.split("\n")) {
+    lines.push({ text: line, start: off });
+    off += line.length + 1;
+  }
+
+  for (const rule of RULES) {
+    const scope = (rule[3] && rule[3].scope) || "text";
+    if (scope === "heading") {
+      for (const ln of lines) {
+        if (!isHeadingLine(ln.text)) continue;
+        runRule(rule, ln.text, ln.start, hits, plain, true);
+      }
+    } else if (scope === "raw") {
+      // 純文字輸入時 raw === plain，位置可對齊可標紅；HTML 輸入時只列清單不標紅
+      if (tagged) runRule(rule, raw, 0, hits, raw, false);
+      else runRule(rule, plain, 0, hits, plain, true);
+    } else {
+      runRule(rule, plain, 0, hits, plain, true);
+    }
+  }
+
+  // 排序：起點小的優先，同起點取長的
+  hits.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+
+  // 挑出實際要標紅的片段（重疊的只留第一個，避免 mark 巢狀）
+  const marks = [];
+  let lastEnd = -1;
+  for (const h of hits) {
+    if (!h.anchored) continue;
+    if (h.start >= lastEnd) { h.markIndex = marks.length; marks.push(h); lastEnd = h.end; }
+  }
+  // 被蓋掉的命中，指向包住它的那個標記
+  for (const h of hits) {
+    if (h.markIndex !== undefined || !h.anchored) continue;
+    const owner = marks.findIndex(mk => mk.start <= h.start && h.start < mk.end);
+    if (owner >= 0) h.markIndex = owner;
+  }
+
+  return { plain, hits, marks, tagged };
+}
+
+// 把 plain 依 marks 包成帶 <mark> 的 HTML
+function markHtml(plain, marks, idPrefix) {
+  let html = "", cur = 0;
+  for (const mk of marks) {
+    html += esc(plain.slice(cur, mk.start));
+    html += '<mark class="' + (mk.soft ? "soft" : "hard") + '"'
+          + (idPrefix ? ' id="' + idPrefix + mk.markIndex + '"' : "")
+          + ' title="' + esc(mk.cat + "：" + mk.tip) + '">'
+          + esc(plain.slice(mk.start, mk.end)) + "</mark>";
+    cur = mk.end;
+  }
+  return html + esc(plain.slice(cur));
+}
+
+function render(raw) {
+  if (!raw.trim()) {
+    $out.innerHTML = '<span class="empty">還沒有內容。</span>';
+    $list.innerHTML = '<span class="empty">還沒有內容。</span>';
+    $hardN.textContent = "0";
+    $softN.textContent = "0";
+    $meta.textContent = "等著你貼東西進來";
+    return;
+  }
+
+  const { plain, hits, marks, tagged } = scan(raw);
+  const hard = hits.filter(h => !h.soft).length;
+  const soft = hits.length - hard;
+  const chars = plain.replace(/\s/g, "").length;
+
+  $hardN.textContent = hard;
+  $softN.textContent = soft;
+  $meta.innerHTML = (hits.length === 0 ? '<span class="pass">✓ 通過，沒有命中黑名單</span>　／　' : "")
+    + chars + " 字"
+    + (tagged ? "（已去除 HTML 標籤）" : "")
+    + "　／　總計 " + hits.length + " 處";
+
+  $out.innerHTML = markHtml(plain, marks, "mk") || '<span class="empty">還沒有內容。</span>';
+
+  if (hits.length === 0) {
+    $list.innerHTML = '<span class="empty">沒有命中，收工。</span>';
+    return;
+  }
+  const groups = new Map();
+  for (const h of hits) {
+    if (!groups.has(h.cat)) groups.set(h.cat, []);
+    groups.get(h.cat).push(h);
+  }
+  const cats = [...groups.keys()].sort((a, b) => {
+    const ia = CAT_ORDER.indexOf(a.charAt(0)), ib = CAT_ORDER.indexOf(b.charAt(0));
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+  });
+
+  let out = "";
+  for (const cat of cats) {
+    const arr = groups.get(cat);
+    const tone = CAT_TONE[cat.charAt(0)] || "ink";
+    out += '<div class="grp">' + esc(cat) + "（" + arr.length + "）</div>";
+    for (const h of arr) {
+      out += '<div class="hit" data-mk="' + (h.markIndex === undefined ? "" : h.markIndex) + '">'
+        + '<div class="head">'
+        + '<span class="w">「' + esc(h.word) + '」</span>'
+        + '<span class="badge ' + (h.soft ? "soft" : tone) + '">' + esc(cat.charAt(0)) + "</span>"
+        + (h.soft ? '<span class="badge soft">待確認</span>' : "")
+        + "</div>"
+        + '<div class="tip">' + esc(h.tip) + "</div>"
+        + '<div class="ctx">…' + esc(h.ctx) + "…</div>"
+        + "</div>";
+    }
+  }
+  $list.innerHTML = out;
+}
+
+$list.addEventListener("click", (e) => {
+  const row = e.target.closest(".hit");
+  if (!row || !row.dataset.mk) return;
+  const el = document.getElementById("mk" + row.dataset.mk);
+  if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: SCROLL });
+  el.classList.add("flash");
+  setTimeout(() => el.classList.remove("flash"), 900);
+});
+
+let timer;
+$in.addEventListener("input", () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => render($in.value), 200);
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+  $in.value = "";
+  render("");
+  $in.focus();
+});
+
+const SAMPLE = [
+  "先誠實講，這篇會告訴你一件事。",
+  "",
+  "先搞懂這 10 款工具的分工",
+  "",
+  "值得注意的是，自動化對現代團隊至關重要，能大幅提升效率。舉個例子，我某個午後深入探討了這個問題，數字看起來相當觸目驚心。",
+  "",
+  "概念講完了，來接真的。這不是工具的問題，而是流程的問題；它不僅是一個外掛，更是一整套方法論——懂的都懂。",
+  "",
+  "**重點**：從行銷到財務，許多企業都在做這件事。簡單來說，人只要在最前面出手一次，剩下的風險都閃得掉。",
+].join("\n");
+
+function fillSample() {
+  $in.value = SAMPLE;
+  render($in.value);
+}
+document.getElementById("sample").addEventListener("click", fillSample);
+
+// 標語區的按鈕：沒內容就先放範例，再捲到輸入框
+document.getElementById("tryOne").addEventListener("click", () => {
+  if (!$in.value.trim()) fillSample();
+  $in.scrollIntoView({ block: "center", behavior: SCROLL });
+});
+
+// 一開就有東西看：先放範例
+fillSample();
+</script>
+</body>
+</html>

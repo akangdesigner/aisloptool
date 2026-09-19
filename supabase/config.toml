@@ -8,3 +8,19 @@ verify_jwt = false
 # 綠界回呼（notify / return）沒有 JWT；create 一樣在函式裡自己驗。
 [functions.ecpay]
 verify_jwt = false
+
+# AI 新聞代抓 Google News RSS，公開頁不用登入，所以不驗 JWT。
+[functions.news]
+verify_jwt = false
+
+# 生成標題：跟 rewrite 一樣前端帶 publishable key，函式裡自己驗。
+[functions.title]
+verify_jwt = false
+
+# 聯絡表單寄信：公開頁不用登入，靠 honeypot 與限流擋垃圾信。
+[functions.contact]
+verify_jwt = false
+
+# 右下角小幫手：公開頁面誰都能問，不驗 JWT，函式裡用 IP 計數擋濫用。
+[functions.chat]
+verify_jwt = false

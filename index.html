@@ -38,6 +38,7 @@
     --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
   [hidden]{display:none !important}
   body{
     margin:0; background:var(--paper); color:var(--ink);
@@ -56,7 +57,7 @@
   /* 刊頭品牌：橫式 lockup（章＋字標），最小顯示高度 32px */
   .masthead h1{margin:0; line-height:0}
   .masthead h1 img{display:block; height:52px; width:auto}
-  .masthead-right{display:flex; align-items:center; gap:12px; padding-bottom:6px}
+  .masthead-right{display:flex; align-items:center; gap:12px; padding-bottom:6px; flex-wrap:wrap; min-width:0; max-width:100%}
   .tagline{font-size:12.5px; letter-spacing:.2em; color:var(--dim); white-space:nowrap}
   .ver{
     font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dim);
@@ -65,29 +66,30 @@
   .stamp{width:56px; height:56px; border:3px solid var(--ink); flex:none}
   .seal{
     font-family:var(--font-mincho); font-size:13px; font-weight:700; color:#fff;
-    background:var(--red); padding:5px 9px; letter-spacing:.14em;
+    background:var(--red); padding:5px 9px; letter-spacing:.14em; white-space:nowrap;
   }
   .whoami{
     display:flex; align-items:center; gap:8px; max-width:280px;
     font-size:12px; color:var(--dim); white-space:nowrap;
   }
   .whoami img{width:26px; height:26px; flex:none; border:2px solid var(--ink); object-fit:cover}
-  .whoami .who-t{overflow:hidden; text-overflow:ellipsis}
+  .whoami .who-t{overflow:hidden; text-overflow:ellipsis; min-width:0}
   .signout{font-size:12px; letter-spacing:.1em; color:var(--dimmer); text-decoration:none}
   .signout:hover{color:var(--ink)}
 
   /* ── 導覽列 ───────────────────────────── */
   .nav{
-    display:flex; flex-wrap:wrap;
+    display:flex; flex-wrap:wrap; overflow:hidden;
     border-left:3px solid var(--ink); border-right:3px solid var(--ink);
     border-bottom:3px solid var(--ink);
   }
   .nav a{
-    flex:1; min-width:110px; text-align:center; text-decoration:none;
+    flex:1; min-width:0; text-align:center; text-decoration:none;   /* 六顆一排撐到 600px，再窄才換成三欄兩排 */
     font-size:13.5px; font-weight:700; letter-spacing:.14em; padding:12px 0;
-    background:var(--panel); color:var(--ink); border-right:1px dashed var(--rule);
+    background:var(--panel); color:var(--ink);
+    border-right:1px dashed var(--rule); border-bottom:1px dashed var(--rule);
+    margin:0 -1px -1px 0;   /* 最右／最下那圈虛線推出去被 overflow 裁掉 */
   }
-  .nav a:last-child{border-right:0}
   .nav a:hover{background:var(--paper); color:var(--ink)}
   .nav a.on{background:var(--ink); color:var(--paper)}
 
@@ -124,6 +126,8 @@
     .cols{grid-template-columns:1fr}
     .hero{height:240px}
     .masthead h1 img{height:38px}
+    .rules6{grid-template-columns:repeat(3,1fr)}
+    .side{aspect-ratio:auto; height:260px}   /* 單欄時 4:3 會變成整面大圖，壓成橫幅 */
   }
 
   /* ── 通用按鈕 ─────────────────────────── */
@@ -157,9 +161,9 @@
   .howto ol{margin:0; padding-left:1.4em; font-size:14.5px; line-height:2}
 
   /* ── 六類規則 ─────────────────────────── */
-  .rules6{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-  .rules6 .r{padding:18px 20px; border-right:1px dashed var(--rule)}
-  .rules6 .r:last-child{border-right:0}
+  .rules6{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); overflow:hidden}
+  .rules6 .r{padding:18px 20px; margin:0 -1px -1px 0;
+    border-right:1px dashed var(--rule); border-bottom:1px dashed var(--rule)}
   .rules6 .r .n{font-family:var(--font-mincho); font-size:17px; font-weight:700}
   .rules6 .r .d{font-size:13px; color:var(--dim)}
 
@@ -183,6 +187,9 @@
   #rewriteBtn{background:var(--red); color:#fff; flex:1.4}
   #rewriteBtn:hover{background:#a5301f}
   #rewriteBtn:disabled{background:var(--dimmer); cursor:progress}
+  #titleBtn{background:var(--panel); color:var(--red); border-right:3px solid var(--ink)}
+  #titleBtn:hover{background:var(--paper)}
+  #titleBtn:disabled{color:var(--dimmer); cursor:progress}
 
   /* ── 上傳檔案（付費版）─────────────────── */
   .dropzone{
@@ -210,6 +217,75 @@
   #quota .plan-tag{font-weight:700; color:var(--red)}
   #quota a{color:var(--ink)}
 
+  /* ── 標題建議 ─────────────────────────── */
+  .title-panel{margin-top:16px}
+  .title-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 16px; border-bottom:3px solid var(--ink); background:#f2ede2;
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--dim);
+  }
+  .title-bar .left{flex:1; min-width:180px}
+  .title-bar b{color:var(--red)}
+  .title-bar button{
+    font:inherit; font-size:12px; font-weight:700; letter-spacing:.12em; cursor:pointer;
+    padding:7px 14px; border:2px solid var(--ink); background:var(--panel); color:var(--ink);
+  }
+  .title-bar button:hover{background:var(--paper)}
+  .title-bar button:disabled{color:var(--dimmer); border-color:var(--dimmer); cursor:progress}
+  .titles .t{
+    display:flex; align-items:flex-start; gap:14px; padding:14px 20px; cursor:pointer;
+    border-bottom:1px dashed var(--rule); background:var(--panel);
+  }
+  .titles .t:last-child{border-bottom:0}
+  .titles .t:hover{background:#fff}
+  .titles .t .sty{
+    flex:none; width:3.4em; padding-top:4px;
+    font-family:var(--font-mincho); font-size:12.5px; letter-spacing:.14em; color:var(--red);
+  }
+  .titles .t .txt{
+    flex:1; min-width:0; font-family:var(--font-mincho); font-size:19px; line-height:1.6;
+    word-break:break-word;
+  }
+  .titles .t .act{
+    flex:none; padding-top:6px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dimmer);
+  }
+  .titles .t:hover .act{color:var(--ink)}
+  .titles .t.copied .act{color:var(--red)}
+  .title-status{padding:14px 20px; font-family:var(--font-mono); font-size:12px; color:var(--dim)}
+  .title-status.err{color:var(--red)}
+
+  /* ── 429：每日次數用完的遮罩 ─────────────── */
+  .gate{
+    position:fixed; inset:0; z-index:50; padding:20px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(23,21,15,.72);
+  }
+  .gate[hidden]{display:none}
+  .gate-card{
+    width:100%; max-width:420px; padding:34px 30px 28px; text-align:center;
+    background:var(--panel); border:3px solid var(--ink);
+    box-shadow:10px 10px 0 rgba(23,21,15,.45);
+  }
+  .gate-card .code{
+    font-family:var(--font-mono); font-size:52px; font-weight:700; letter-spacing:.1em;
+    line-height:1; color:var(--red);
+  }
+  .gate-card h3{margin:12px 0 0; font-family:var(--font-mincho); font-size:22px; letter-spacing:.06em}
+  .gate-card p{margin:10px 0 0; font-size:14px; line-height:1.9; color:var(--dim)}
+  .gate-card .when{
+    margin-top:14px; font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--dimmer);
+  }
+  .gate-card .acts{display:flex; gap:10px; margin-top:22px}
+  .gate-card .acts > *{
+    flex:1; font:inherit; font-size:13px; font-weight:700; letter-spacing:.14em;
+    padding:11px 0; text-align:center; text-decoration:none; cursor:pointer;
+    border:2px solid var(--ink); background:var(--panel); color:var(--ink);
+  }
+  .gate-card .acts .up{background:var(--red); color:#fff; border-color:var(--red)}
+  .gate-card .acts .up:hover{background:#a5301f}
+  .gate-card .acts .no:hover{background:var(--paper)}
+
   /* ── 改寫對照 ─────────────────────────── */
   .cmp-panel{margin-top:16px}
   .cmp-bar{
@@ -228,26 +304,37 @@
   .cmp-bar button.red{background:var(--red); color:#fff; border-color:var(--red)}
   .cmp-bar button.red:hover{background:#a5301f}
   .cmp-bar .fname{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em; color:var(--dim)}
-  .cmp-head{
-    display:grid; grid-template-columns:1fr 1fr; font-family:var(--font-mincho);
-    font-size:12.5px; letter-spacing:.2em; color:var(--dim); border-bottom:1px dashed var(--rule);
+  /* 左右各是一整篇（不是逐段對照），改寫版那欄拖一下就能整篇選起來 */
+  .cmp{max-height:70vh; overflow:auto; display:grid; grid-template-columns:1fr 1fr}
+  .cmp > div{min-width:0}
+  .cmp .r{border-left:1px dashed var(--rule); background:#fff}
+  .cmp .h{
+    position:sticky; top:0; z-index:1; padding:8px 20px; background:var(--panel);
+    font-family:var(--font-mincho); font-size:12.5px; letter-spacing:.2em; color:var(--dim);
+    border-bottom:1px dashed var(--rule);
   }
-  .cmp-head > div{padding:8px 20px}
-  .cmp-head > div + div{border-left:1px dashed var(--rule)}
-  .cmp{max-height:70vh; overflow:auto}
-  .cmp-row{display:grid; grid-template-columns:1fr 1fr; border-bottom:1px dashed var(--rule)}
-  .cmp-row:last-child{border-bottom:0}
-  .cmp-row > div{padding:14px 20px; line-height:2; white-space:pre-wrap; word-break:break-word; min-width:0}
-  .cmp-row .r{border-left:1px dashed var(--rule); background:#fff}
-  .cmp-row .r.same{color:var(--dimmer)}
-  .cmp-row.blank > div{padding:4px 20px}
-  .cmp-row.blank .pg{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dimmer)}
+  .cmp .r .h{background:#fff}
+  .cmp .t{padding:14px 20px; line-height:2; white-space:pre-wrap; word-break:break-word}
+  .cmp .pg{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--dimmer)}
   .cmp-status{padding:14px 20px; font-family:var(--font-mono); font-size:12px; color:var(--dim)}
   .cmp-status.err{color:var(--red)}
+  /* 改寫進度：跑的時候只有這一條，跑完才露出左右對照 */
+  .cmp-progress{padding:36px 24px 40px}
+  .cmp-progress .lbl{
+    display:flex; justify-content:space-between; gap:12px; margin-bottom:10px;
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.1em; color:var(--dim);
+  }
+  .cmp-progress .lbl b{color:var(--ink)}
+  .cmp-progress .bar{
+    height:16px; border:2px solid var(--ink); overflow:hidden;
+    background:radial-gradient(var(--rule) 1px,transparent 1.4px) 0 0/7px 7px, var(--panel);
+  }
+  .cmp-progress .bar i{display:block; height:100%; width:0; background:var(--red); transition:width .5s ease-out}
   @media (max-width:760px){
-    .cmp-head{display:none}
-    .cmp-row{grid-template-columns:1fr}
-    .cmp-row .r{border-left:0; border-top:1px dotted var(--rule)}
+    .tagline{display:none}   /* 刊頭右側塞不下，標語先讓位 */
+    .cmp{grid-template-columns:1fr}
+    .cmp .r{order:-1; border-left:0; border-bottom:3px solid var(--ink)}   /* 手機改寫版放上面，複製方便 */
+    .cmp .h{position:static}
   }
 
   /* ── 計分格（網點底）───────────────────── */
@@ -312,14 +399,14 @@
   /* ── 自己過一遍 ───────────────────────── */
   .checklist-panel{margin-top:16px}
   .checklist-panel .panel-h{font-size:15px; padding:11px 20px}
-  .checklist{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-  .check{padding:20px 22px; border-right:1px dashed var(--rule)}
-  .check:last-child{border-right:0}
+  .checklist{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr)); overflow:hidden}
+  .check{padding:20px 22px; margin:0 -1px -1px 0;
+    border-right:1px dashed var(--rule); border-bottom:1px dashed var(--rule)}
   .check .q{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:8px}
   .check .a{font-size:13.5px; color:var(--dim); line-height:1.9}
 
   /* ── 訂閱方案 ─────────────────────────── */
-  .plans{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  .plans{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));
     gap:16px; margin-top:16px; align-items:start}
   .plan{border:3px solid var(--ink); background:var(--panel); min-width:0}
   .plan.hot{
@@ -342,6 +429,7 @@
 
   /* ── 結帳 ─────────────────────────────── */
   .checkout{
+    overflow:hidden;
     border-left:3px solid var(--ink); border-right:3px solid var(--ink);
     border-bottom:3px solid var(--ink); padding:48px 32px 56px;
     background:radial-gradient(#d8d0be 1px,transparent 1.4px) 0 0/9px 9px, var(--paper);
@@ -351,7 +439,7 @@
     letter-spacing:.1em; margin:0; transform:rotate(-1.2deg)}
   .checkout-head .sub{font-family:var(--font-mincho); font-size:13px; letter-spacing:.2em;
     color:var(--dim); padding-bottom:8px}
-  .checkout-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  .checkout-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));
     gap:30px; align-items:start}
   .card-form{position:relative; background:var(--panel); padding:32px 28px 30px;
     transform:rotate(-.7deg); min-width:0}
@@ -462,7 +550,10 @@
     font-weight:700; letter-spacing:.16em; padding:12px 28px; border:0;
     cursor:pointer; background:var(--ink); color:var(--paper)}
   .form-body button:hover{background:#3a352a}
+  .form-body button:disabled{opacity:.5; cursor:wait}
+  .form-body .hp{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden}
   #contactMsg{font-size:13px; color:var(--red)}
+  #contactMsg.ok{color:var(--ink)}
 
   /* ── 常見問題 ─────────────────────────── */
   .faq{border:3px solid var(--ink); background:var(--panel); margin-top:16px}
@@ -470,6 +561,32 @@
   .faq .item:last-child{border-bottom:0}
   .faq .q{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:6px}
   .faq .a{font-size:14.5px; color:var(--dim); text-wrap:pretty}
+
+  /* ── AI 知識 ─────────────────────────── */
+  .posts{border:3px solid var(--ink); background:var(--panel); margin-top:16px}
+  .posts .post{display:block; padding:22px 24px; border-bottom:1px dashed var(--rule);
+    color:inherit; text-decoration:none}
+  .posts .post:last-child{border-bottom:0}
+  .posts a.post:hover{background:var(--paper)}
+  .posts .meta{font-size:12px; letter-spacing:.16em; color:var(--dimmer); margin-bottom:6px}
+  .posts .meta .tag{margin-left:10px}
+  .posts .t{font-family:var(--font-mincho); font-size:18px; font-weight:700; margin-bottom:6px}
+  .posts .s{font-size:14.5px; color:var(--dim); text-wrap:pretty}
+  .posts .empty{padding:40px 24px; text-align:center; font-size:14.5px; color:var(--dim)}
+
+  /* ── AI 新聞 ─────────────────────────── */
+  .news-topics{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px}
+  .news-topics button{
+    font-family:var(--font-mincho); font-size:13.5px; font-weight:700; letter-spacing:.12em;
+    padding:8px 16px; border:2px solid var(--ink); background:var(--panel);
+    color:var(--ink); cursor:pointer;
+  }
+  .news-topics button:hover{background:var(--paper)}
+  .news-topics button.on{background:var(--ink); color:var(--paper)}
+  .news-foot{display:flex; justify-content:space-between; align-items:center; gap:12px;
+    flex-wrap:wrap; margin-top:14px; font-size:12.5px; color:var(--dimmer)}
+  .news-foot .btn{padding:8px 16px; font-size:13px}
+  .posts .meta .src{margin-left:10px; color:var(--dim)}
 
   /* ── 登入 ─────────────────────────────── */
   .login-wrap{
@@ -516,6 +633,176 @@
   .footer{margin-top:24px; padding-top:14px; border-top:3px solid var(--ink);
     display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
     font-size:12px; color:var(--dimmer)}
+  /* ── 右下角小幫手 ─────────────────────── */
+  /* z-index 壓在 429 遮罩（50）底下，遮罩出來時小幫手一起被蓋住 */
+  .bot-fab{
+    position:fixed; right:20px; bottom:20px; z-index:40;
+    width:56px; height:56px; padding:0; cursor:pointer;
+    background:var(--panel); color:var(--ink); border:3px solid var(--ink);
+    box-shadow:5px 5px 0 var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .12s, box-shadow .12s;
+  }
+  .bot-fab:hover{transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink)}
+  .bot-fab:active{transform:translate(2px,2px); box-shadow:3px 3px 0 var(--ink)}
+  .bot-fab svg{width:32px; height:32px; display:block}
+  .bot-fab .x{display:none; font-size:30px; line-height:1; font-weight:700}
+  .bot-fab.open svg{display:none}
+  .bot-fab.open .x{display:block}
+  .bot-tip{
+    position:fixed; right:88px; bottom:30px; z-index:40; pointer-events:none;
+    font-family:var(--font-mincho); font-size:13px; letter-spacing:.1em; white-space:nowrap;
+    padding:6px 12px; background:var(--paper); border:2px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .bot-tip::after{
+    content:""; position:absolute; right:-9px; top:50%; margin-top:-5px;
+    border:5px solid transparent; border-left-color:var(--ink); border-right:0;
+  }
+  .bot{
+    position:fixed; right:20px; bottom:90px; z-index:40;
+    width:min(360px, calc(100vw - 32px)); height:min(520px, calc(100vh - 120px));
+    display:flex; flex-direction:column;
+    background:var(--panel); border:3px solid var(--ink);
+    box-shadow:8px 8px 0 rgba(23,21,15,.45);
+  }
+  .bot-head{
+    display:flex; align-items:center; gap:10px; padding:9px 8px 9px 14px;
+    background:var(--ink); color:var(--paper);
+  }
+  .bot-head .t{font-family:var(--font-mincho); font-weight:700; font-size:15px; letter-spacing:.08em; flex:1}
+  .bot-head .s{font-size:11px; color:var(--rule); letter-spacing:.1em}
+  .bot-head button{background:none; border:0; color:var(--paper); font-size:22px; cursor:pointer; line-height:1; padding:2px 6px}
+  .bot-head button:hover{color:var(--hl)}
+  .bot-log{flex:1; overflow-y:auto; padding:14px 12px; display:flex; flex-direction:column; gap:10px}
+  .bot-msg{
+    max-width:88%; padding:8px 12px; font-size:13.5px; line-height:1.7;
+    white-space:pre-wrap; word-break:break-word; border:2px solid var(--ink);
+  }
+  .bot-msg.me{align-self:flex-end; background:var(--ink); color:var(--paper)}
+  .bot-msg.ai{align-self:flex-start; background:var(--paper)}
+  .bot-msg.err{border-style:dashed; color:var(--red)}
+  .bot-msg.wait{color:var(--dimmer); letter-spacing:.2em}
+  .bot-chips{display:flex; flex-wrap:wrap; gap:6px; padding:0 12px 10px}
+  .bot-chips button{
+    font:inherit; font-size:12px; padding:4px 10px; cursor:pointer; letter-spacing:.04em;
+    background:var(--panel); color:var(--ink); border:2px solid var(--ink);
+  }
+  .bot-chips button:hover{background:var(--hl)}
+  .bot-form{display:flex; border-top:3px solid var(--ink)}
+  .bot-form input{
+    flex:1; min-width:0; font:inherit; font-size:14px; padding:11px 12px;
+    border:0; background:var(--panel); color:var(--ink); outline:none;
+  }
+  .bot-form button{
+    font:inherit; font-size:13px; font-weight:700; letter-spacing:.14em; padding:0 18px;
+    border:0; border-left:3px solid var(--ink); background:var(--red); color:#fff; cursor:pointer;
+  }
+  .bot-form button:disabled{background:var(--dimmer); cursor:default}
+  @media (max-width:480px){
+    .bot-fab{right:14px; bottom:14px}
+    .bot-tip{right:80px; bottom:24px}
+    .bot{right:16px; bottom:82px; width:calc(100vw - 32px); height:calc(100vh - 100px)}
+  }
+
+  /* ── 觸控裝置：輸入框字級至少 16px，iOS 才不會在聚焦時自動放大整頁 ── */
+  @media (pointer:coarse){
+    #in, .form-body input, .form-body select, .form-body textarea, .bot-form input{font-size:16px}
+  }
+
+  /* ── 手機（600px 以下）─────────────────── */
+  @media (max-width:600px){
+    .wrap{padding:14px 14px 84px}
+
+    /* 刊頭：標語藏起來、章與帳號縮小 */
+    .masthead{gap:10px; padding-bottom:10px}
+    .masthead h1 img{height:34px}
+    .masthead-right{gap:10px; padding-bottom:2px}
+    .whoami{max-width:150px}
+
+    /* 導覽列：三欄兩排 */
+    .nav{display:grid; grid-template-columns:repeat(3,1fr)}
+    .nav a{padding:11px 0; font-size:13px; letter-spacing:.1em}
+
+    /* 首頁 */
+    .hero{height:190px}
+    .episode-bl{font-size:13px; padding:8px 14px 6px}
+    .lede{padding:20px 18px}
+    .lede h2{font-size:23px}
+    .lede h2 br{display:none}   /* 窄螢幕讓它自然折行，硬換行會斷在詞中間 */
+    .lede p{font-size:14.5px}
+    .howto-box{padding:14px}
+    .howto{padding:14px 16px}
+    .rules6{grid-template-columns:repeat(2,1fr)}
+    .rules6 .r{padding:14px 16px}
+    .rules6 .r .n{font-size:16px}
+
+    /* 輸入格：四顆按鈕改成兩排 */
+    #in{padding:16px; min-height:180px}
+    .dropzone{padding:10px 14px}
+    .btnbar{display:grid; grid-template-columns:1fr 1fr}
+    #clear{border-right:0}
+    #titleBtn, #rewriteBtn{border-top:3px solid var(--ink)}
+    .statbox{padding:14px}
+    .counts{gap:14px; padding:10px 14px}
+    .count .n{font-size:32px}
+    #meta, #quota{padding:8px 14px}
+
+    /* 標題建議、改寫對照、全文、命中清單 */
+    .title-bar, .cmp-bar{padding:10px 14px}
+    .titles .t{padding:12px 14px; gap:10px}
+    .titles .t .txt{font-size:17px}
+    .cmp .h{padding:8px 14px}
+    .cmp .t{padding:12px 14px}
+    .cmp-progress{padding:28px 16px 32px}
+    #out{padding:16px 16px 20px}
+    .grp{padding:10px 14px 4px}
+    .hit{padding:12px 14px}
+    .portrait{height:220px}
+    .check{padding:16px}
+
+    /* 各頁共用 */
+    .page-head{padding:18px 16px}
+    .page-head h2{font-size:22px}
+    .panel-h{padding:9px 14px}
+    .faq .item, .posts .post{padding:18px 16px}
+    .faq .q, .posts .t{font-size:16.5px}
+    .news-topics button{padding:7px 12px; font-size:13px}
+
+    /* 訂閱方案 */
+    .plans{gap:14px}
+    .plan-body{padding:16px}
+    .price{font-size:34px}
+
+    /* 結帳 */
+    .checkout{padding:28px 14px 36px}
+    .checkout-head{margin-bottom:22px}
+    .checkout-head h2{font-size:30px}
+    .checkout-grid{gap:22px}
+    .card-form{padding:26px 18px 22px}
+    .bill{padding:20px 18px}
+    .bill-row .total{font-size:32px}
+
+    /* 感謝頁、聯絡我們、登入 */
+    .thanks .body{padding:96px 18px 32px}
+    .thanks h2{font-size:28px}
+    .contact{padding:28px 16px 30px; gap:22px}
+    .contact h2{font-size:30px}
+    .contact .lead{font-size:14.5px; margin-bottom:20px}
+    .kv .v{font-size:16px}
+    .form-body{padding:16px}
+    .form-body .grid2{grid-template-columns:1fr}
+    .form-body button{align-self:stretch}
+    .login-wrap{padding:36px 14px 48px}
+    .login-card{padding:26px 20px 24px}
+    .login-logo{height:80px}
+    .login-card h2{font-size:26px}
+
+    /* 429 遮罩 */
+    .gate{padding:16px}
+    .gate-card{padding:26px 20px 22px}
+    .gate-card .code{font-size:44px}
+  }
 </style>
 </head>
 <body>
@@ -531,13 +818,16 @@
         <img id="whoamiPic" alt="" onerror="this.remove()">
         <span class="who-t" id="whoamiText"></span>
       </span>
+      <a class="signout" href="#login" id="doLogin">登入</a>
       <a class="signout" href="#" id="doLogout" hidden>登出</a>
     </div>
   </header>
 
-  <nav class="nav" id="nav" hidden>
+  <nav class="nav" id="nav">
     <a href="#home">首頁</a>
     <a href="#plans">訂閱方案</a>
+    <a href="#knowledge">AI知識</a>
+    <a href="#news">AI新聞</a>
     <a href="#contact">聯絡我們</a>
     <a href="#faq">常見問題</a>
   </nav>
@@ -600,6 +890,7 @@
         <div class="btnbar">
           <button id="sample">試試範例</button>
           <button id="clear">清空</button>
+          <button id="titleBtn" type="button">生成標題</button>
           <button id="rewriteBtn">改寫</button>
         </div>
       </div>
@@ -613,6 +904,16 @@
       </div>
     </div>
 
+    <section class="panel title-panel" id="titlePanel" hidden>
+      <h2 class="panel-h invert">標題建議　五種風格，點一下複製</h2>
+      <div class="title-bar">
+        <span class="left" id="titleQuota"></span>
+        <button type="button" id="titleAgain">再生一次</button>
+      </div>
+      <div class="titles" id="titles"></div>
+      <div class="title-status" id="titleStatus" hidden></div>
+    </section>
+
     <section class="panel cmp-panel" id="cmpPanel" hidden>
       <h2 class="panel-h invert">改寫對照　左邊原文・右邊改寫版</h2>
       <div class="cmp-bar">
@@ -622,8 +923,11 @@
         <button type="button" id="cmpCopy">複製改寫版</button>
         <button type="button" id="cmpRescan" class="solid">用改寫版再掃一次</button>
       </div>
-      <div class="cmp-head"><div>原文</div><div>改寫版</div></div>
-      <div class="cmp" id="cmp"></div>
+      <div class="cmp-progress" id="cmpProgress" hidden>
+        <div class="lbl"><span id="cmpProgLbl">改寫中</span><b id="cmpProgPct">0%</b></div>
+        <div class="bar"><i id="cmpProgFill"></i></div>
+      </div>
+      <div class="cmp" id="cmp" hidden></div>
       <div class="cmp-status" id="cmpStatus" hidden></div>
     </section>
 
@@ -807,6 +1111,40 @@
     </div>
   </div>
 
+  <!-- ═══ AI 知識 ═══════════════════════════════════════ -->
+  <div class="page" id="page-knowledge">
+    <section class="page-head">
+      <h2>AI 知識</h2>
+      <p>AI 腔怎麼來、怎麼看、怎麼改。寫給要自己動手的人。</p>
+    </section>
+    <section class="posts">
+      <!-- 每篇文章一個 .post，新的放最上面。格式：
+      <a class="post" href="blog/文章檔名.html">
+        <div class="meta">2026-09-12<span class="tag">寫作</span></div>
+        <div class="t">文章標題</div>
+        <div class="s">一兩句摘要。</div>
+      </a>
+      -->
+      <div class="empty">第一篇文章準備中。</div>
+    </section>
+  </div>
+
+  <!-- ═══ AI 新聞 ═══════════════════════════════════════ -->
+  <div class="page" id="page-news">
+    <section class="page-head">
+      <h2>AI 新聞</h2>
+      <p>Google 新聞裡跟去 AI 味、AI 寫作有關的報導，只是標題掛了 AI 的財經與社會新聞已經濾掉。點標題到原站看。</p>
+    </section>
+    <div class="news-topics" id="newsTopics"></div>
+    <section class="posts" id="newsList">
+      <div class="empty">正在抓新聞…</div>
+    </section>
+    <div class="news-foot">
+      <span id="newsNote"></span>
+      <button class="btn ghost" type="button" id="newsReload">重新抓取</button>
+    </div>
+  </div>
+
   <!-- ═══ 聯絡我們 ═══════════════════════════════════════ -->
   <div class="page" id="page-contact">
     <div class="contact">
@@ -816,7 +1154,7 @@
         <p class="lead">沒有客服機器人。平日兩個工作日內回信。</p>
 
         <div class="kv">
-          <div class="row"><span class="k">信箱</span><span class="v">hello@example.com</span></div>
+          <div class="row"><span class="k">信箱</span><span class="v">asdtodd42@gmail.com</span></div>
           <div class="row"><span class="k">回覆時間</span><span class="v">平日 2 個工作日</span></div>
           <div class="row"><span class="k">回報誤判</span><span class="v">附上那句話就好</span></div>
         </div>
@@ -833,20 +1171,20 @@
           <div class="grid2">
             <label>
               <span class="lab">姓名 <span class="req">＊</span></span>
-              <input placeholder="王小明">
+              <input id="ctName" placeholder="王小明" maxlength="60">
             </label>
             <label>
               <span class="lab">公司（選填）</span>
-              <input placeholder="公司或團隊">
+              <input id="ctCompany" placeholder="公司或團隊" maxlength="80">
             </label>
           </div>
           <label>
             <span class="lab">電子郵件 <span class="req">＊</span></span>
-            <input type="email" placeholder="you@example.com">
+            <input id="ctEmail" type="email" placeholder="you@example.com" maxlength="120">
           </label>
           <label>
             <span class="lab">想問什麼 <span class="req">＊</span></span>
-            <select>
+            <select id="ctTopic">
               <option>規則怎麼判的</option>
               <option>方案與發票</option>
               <option>團隊授權</option>
@@ -856,7 +1194,12 @@
           </label>
           <label>
             <span class="lab">內容 <span class="req">＊</span></span>
-            <textarea placeholder="一句話講重點就好"></textarea>
+            <textarea id="ctBody" placeholder="一句話講重點就好" maxlength="3000"></textarea>
+          </label>
+          <!-- honeypot：真人看不到，機器人會填；後端看到有值就丟掉 -->
+          <label class="hp" aria-hidden="true">
+            <span class="lab">網站</span>
+            <input id="ctWebsite" tabindex="-1" autocomplete="off">
           </label>
           <button type="button" id="contactSend">送出</button>
           <div id="contactMsg"></div>
@@ -915,7 +1258,7 @@
         <img class="login-logo" src="brand/lockup/lockup-stacked.png" alt="校稿王">
         <div class="kick">校閱室</div>
         <h2>登入</h2>
-        <p class="lead">登入後才會記住你的規則設定。</p>
+        <p class="lead">掃描不用登入，按「改寫」才要。</p>
 
         <div class="fields">
           <label class="field">
@@ -959,6 +1302,46 @@
     <span>校稿王 <span id="verFoot">v2.0.0</span></span>
   </div>
 
+</div>
+<!-- 右下角小幫手：問這網站在幹嘛、常見問題。罐頭問題按了直接回，自己打字的才送 Edge Function chat -->
+<button type="button" class="bot-fab" id="botFab" aria-label="打開小幫手" aria-expanded="false" aria-controls="bot">
+  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <line x1="16" y1="4" x2="16" y2="8"/>
+    <circle cx="16" cy="3.5" r="1.8" fill="currentColor" stroke="none"/>
+    <rect x="5" y="8" width="22" height="17" rx="3"/>
+    <circle cx="12" cy="16" r="1.9" fill="currentColor" stroke="none"/>
+    <circle cx="20" cy="16" r="1.9" fill="currentColor" stroke="none"/>
+    <path d="M12 21 Q16 23.5 20 21"/>
+    <line x1="2" y1="14" x2="5" y2="14"/><line x1="27" y1="14" x2="30" y2="14"/>
+  </svg>
+  <span class="x" aria-hidden="true">×</span>
+</button>
+<div class="bot-tip" id="botTip">有問題？問我</div>
+<div class="bot" id="bot" hidden role="dialog" aria-label="校稿王小幫手">
+  <div class="bot-head">
+    <span class="t">校稿王小幫手</span>
+    <span class="s">AI 回答，僅供參考</span>
+    <button type="button" id="botClose" aria-label="關閉">×</button>
+  </div>
+  <div class="bot-log" id="botLog" aria-live="polite"></div>
+  <div class="bot-chips" id="botChips"></div>
+  <form class="bot-form" id="botForm">
+    <input id="botInput" type="text" maxlength="600" placeholder="問這網站的事…" autocomplete="off">
+    <button type="submit" id="botSend">送出</button>
+  </form>
+</div>
+<!-- 429：每天的標題次數用完，蓋一張遮罩卡片 -->
+<div class="gate" id="gate429" hidden>
+  <div class="gate-card">
+    <div class="code">429</div>
+    <h3>今天的次數用完了</h3>
+    <p id="gateMsg"></p>
+    <div class="when" id="gateWhen"></div>
+    <div class="acts">
+      <a class="up" href="#plans" id="gateUp">升級不限次數</a>
+      <button type="button" class="no" id="gateClose">知道了</button>
+    </div>
+  </div>
 </div>
 <script>
 // ============================================================
@@ -1254,12 +1637,6 @@ document.getElementById("tryOne").addEventListener("click", () => {
   $in.scrollIntoView({ block: "center", behavior: "smooth" });
 });
 
-// ── 聯絡表單：還沒有後端，先給回饋 ──────────────────────
-document.getElementById("contactSend").addEventListener("click", () => {
-  document.getElementById("contactMsg").textContent =
-    "表單還沒接後端，先直接寫信到 hello@example.com。";
-});
-
 // ── Supabase Auth：Google OAuth ＋ Email 密碼 ──────────────
 // 這兩個值是公開的（publishable key 就是設計來放前端的），真正的權限靠 RLS 擋。
 const SUPABASE_URL = "https://gsusjmksxbybihqazqaz.supabase.co";
@@ -1277,12 +1654,53 @@ try {
 function signedIn() { return !!session; }
 function showErr(e) { $loginMsg.textContent = (e && e.message) ? e.message : String(e || ""); }
 
+// ── 聯絡表單：POST 給 Edge Function contact，由它用 Resend 寄到站長信箱 ──
+// 公開頁不用登入，所以帶的是 publishable key（跟新聞頁一樣）。
+{
+  const $send = document.getElementById("contactSend");
+  const $msg = document.getElementById("contactMsg");
+  const field = (id) => document.getElementById(id);
+  const say = (text, ok) => { $msg.textContent = text; $msg.classList.toggle("ok", !!ok); };
+
+  $send.addEventListener("click", async () => {
+    const payload = {
+      name: field("ctName").value.trim(),
+      company: field("ctCompany").value.trim(),
+      email: field("ctEmail").value.trim(),
+      topic: field("ctTopic").value,
+      body: field("ctBody").value.trim(),
+      website: field("ctWebsite").value,
+    };
+    if (!payload.name || !payload.email || !payload.body) { say("姓名、信箱、內容都要填。"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) { say("信箱格式看起來不對。"); return; }
+
+    $send.disabled = true;
+    say("寄出中…", true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
+        body: JSON.stringify(payload),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || `寄不出去（${res.status}）`);
+      for (const id of ["ctName", "ctCompany", "ctEmail", "ctBody"]) field(id).value = "";
+      say("已寄出，平日兩個工作日內回信。", true);
+    } catch (e) {
+      say((e && e.message) ? e.message : "寄不出去，請直接寫信到 asdtodd42@gmail.com。");
+    } finally {
+      $send.disabled = false;
+    }
+  });
+}
+
 if (sb) {
   // OAuth 導回時網址帶的是 token 不是路由，supabase-js 收下 session 後把它換掉
   sb.auth.onAuthStateChange((_event, s) => {
     session = s;
-    if (s && !PAGES.includes(hashPage(location.hash))) {
-      history.replaceState(null, "", location.pathname + "#home");
+    const h = hashPage(location.hash);
+    if (s && (!PAGES.includes(h) || h === "login")) {
+      history.replaceState(null, "", location.pathname + "#" + afterLogin());
     }
     route();
     loadProfile();
@@ -1323,13 +1741,19 @@ document.getElementById("verFoot").textContent = "v" + APP_VERSION;
 // ── 方案與額度 ─────────────────────────────────────────
 // 免費版每月篇數，要跟 supabase/functions/rewrite/index.ts 的 FREE_MONTHLY 一致
 const FREE_MONTHLY = 5;
+// 免費版每日生成標題次數，要跟 supabase/functions/title/index.ts 的 FREE_TITLE_DAILY 一致
+const FREE_TITLE_DAILY = 3;
 // paidUntil 為 null 是手動標記的永久付費；有值就要還沒過期才算付費
-const state = { plan: "free", paidUntil: null, remaining: null, loaded: false };
+const state = { plan: "free", paidUntil: null, remaining: null, titleLeft: null, loaded: false };
 const $quota = document.getElementById("quota");
 
 function ymNow() {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+// 台北時間的今天（YYYY-MM-DD），跟後端 consume_daily() 的日界線對齊
+function ymdTpe() {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" });
 }
 function fmtDate(iso) {
   const d = new Date(iso);
@@ -1337,18 +1761,26 @@ function fmtDate(iso) {
 }
 
 async function loadProfile() {
-  if (!sb || !session) { state.plan = "free"; state.paidUntil = null; state.remaining = null; state.loaded = false; return; }
+  if (!sb || !session) {
+    state.plan = "free"; state.paidUntil = null; state.remaining = null; state.titleLeft = null; state.loaded = false;
+    $quota.innerHTML = '<span>掃描不用登入。登入後免費每月改 ' + FREE_MONTHLY + ' 篇，字數不限</span>'
+      + '<a href="#login">登入</a>';
+    return;
+  }
   const uid = session.user.id;
-  const [{ data: prof }, { data: use }] = await Promise.all([
+  const [{ data: prof }, { data: use }, { data: dayUse }] = await Promise.all([
     sb.from("profiles").select("plan, paid_until").eq("id", uid).maybeSingle(),
     sb.from("usage").select("n").eq("user_id", uid).eq("ym", ymNow()).maybeSingle(),
+    sb.from("daily_usage").select("n").eq("user_id", uid).eq("ymd", ymdTpe()).eq("kind", "title").maybeSingle(),
   ]);
   const stillPaid = !!prof && prof.plan === "paid" && (!prof.paid_until || new Date(prof.paid_until) > new Date());
   state.plan = stillPaid ? "paid" : "free";
   state.paidUntil = stillPaid ? prof.paid_until : null;
   state.remaining = Math.max(0, FREE_MONTHLY - ((use && use.n) || 0));
+  state.titleLeft = Math.max(0, FREE_TITLE_DAILY - ((dayUse && dayUse.n) || 0));
   state.loaded = true;
   renderQuota();
+  renderTitleQuota();
 }
 
 function renderQuota() {
@@ -1425,22 +1857,14 @@ function setCmpStatus(msg, isErr) {
   $cmpStatus.classList.toggle("err", !!isErr);
 }
 
-function renderCmp(paras, out, done) {
-  let html = "";
-  for (const p of paras) {
-    if (!p.t.trim()) {
-      html += '<div class="cmp-row blank"><div>' + (p.label ? '<span class="pg">' + esc(p.label) + '</span>' : '') + '</div><div class="r"></div></div>';
-      continue;
-    }
-    const { marks } = scan(p.t);
-    const left = markHtml(p.t, marks, "");
-    let right, cls = "r";
-    if (!done.has(p.i)) { right = '<span class="empty">…</span>'; }
-    else if (out[p.i] === p.t) { right = esc(out[p.i]); cls += " same"; }
-    else { right = esc(out[p.i]); }
-    html += '<div class="cmp-row"><div>' + left + '</div><div class="' + cls + '">' + right + "</div></div>";
-  }
-  $cmp.innerHTML = html;
+// 左邊整篇原文（命中畫底線，PDF 的頁碼用小字標），右邊整篇改寫版，段落位置照 i 對齊
+function renderCmp(paras, out) {
+  const left = paras.map(p => {
+    if (!p.t.trim()) return p.label ? '<span class="pg">' + esc(p.label) + '</span>' : '';
+    return markHtml(p.t, scan(p.t).marks, "");
+  }).join("\n");
+  $cmp.innerHTML = '<div><div class="h">原文</div><div class="t">' + left + '</div></div>'
+    + '<div class="r"><div class="h">改寫版</div><div class="t">' + esc(out.join("\n")) + '</div></div>';
 }
 
 function countHits(text) {
@@ -1455,12 +1879,57 @@ function finishCmp(input, output) {
     + "　／　" + output.replace(/\s/g, "").length + " 字";
 }
 
+// ── 進度條：跑的時候藏起對照表，全部改完才一次露出 ──
+// 每批要等模型十幾到幾十秒，只在批與批之間跳會像當掉，所以批內照時間走一條漸近曲線
+// （永遠到不了下一批的界線），批真的回來才跳過去，全部完成跳到 100%。比例照字數算，不照批數。
+const $cmpProgress = document.getElementById("cmpProgress");
+const $cmpProgLbl = document.getElementById("cmpProgLbl");
+const $cmpProgPct = document.getElementById("cmpProgPct");
+const $cmpProgFill = document.getElementById("cmpProgFill");
+let progTimer = null;
+
+function showCmpBody(on) { $cmp.hidden = !on; }
+
+function setProgress(frac, label) {
+  const pct = Math.round(Math.max(0, Math.min(1, frac)) * 100);
+  $cmpProgFill.style.width = pct + "%";
+  $cmpProgPct.textContent = pct + "%";
+  if (label != null) $cmpProgLbl.textContent = label;
+}
+
+function startProgress(label) {
+  clearInterval(progTimer);
+  showCmpBody(false);
+  $cmpProgress.hidden = false;
+  setProgress(0, label);
+}
+
+// done 是已完成的比例，span 是這批佔的比例；時間常數估自字數（2500 字約 50 秒走到這批的六成）
+function tickProgress(done, span, chars, label) {
+  clearInterval(progTimer);
+  const t0 = Date.now();
+  const T = Math.max(8, chars * 0.02) * 1000;
+  const run = () => {
+    const k = 1 - Math.exp(-(Date.now() - t0) / T);
+    setProgress(done + span * Math.min(0.95, k), label);
+  };
+  run();
+  progTimer = setInterval(run, 250);
+}
+
+function endProgress() {
+  clearInterval(progTimer);
+  progTimer = null;
+  $cmpProgress.hidden = true;
+}
+
 // 忙碌中鎖住改寫鈕（貼上改寫與上傳檔案共用）
 let busy = false;
 function setBusy(on, label) {
   busy = on;
   $rewriteBtn.disabled = on;
-  $rewriteBtn.textContent = on ? (label || "處理中…") : "改寫";
+  $titleBtn.disabled = on;
+  $rewriteBtn.textContent = on ? (label || "處理中") : "改寫";
 }
 // 上傳檔案改完的成品 { blob, name }，按「下載改寫版」存檔
 let fileJob = null;
@@ -1469,38 +1938,51 @@ const $cmpFile = document.getElementById("cmpFile");
 function setFileBadge(text) { $cmpFile.hidden = !text; $cmpFile.textContent = text || ""; }
 
 // 共用改寫流程：paras 是 [{i, t}]，i 就是位置，空白段保留位置不送。
-// 分批送、逐批回填對照區，回傳依 i 排的改寫結果（沒改的段落原樣）。
+// 分批送，跑的時候只有進度條，全部回來才一次畫出對照區；回傳依 i 排的改寫結果（沒改的段落原樣）。
 async function runRewrite(paras, opts) {
   const chunks = chunkParas(paras);
   if (!chunks.length) throw new Error("沒有可改寫的段落");
   const out = paras.map(p => p.t);
-  const done = new Set();
+  const size = chunk => chunk.reduce((n, p) => n + p.t.length, 0);
+  const totalChars = chunks.reduce((n, c) => n + size(c), 0);
   $cmpStat.textContent = "";
-  renderCmp(paras, out, done);
-  setCmpStatus("改寫中… 0/" + chunks.length + " 批");
-  for (let c = 0; c < chunks.length; c++) {
-    const chunk = chunks[c];
-    const data = await callRewrite({
-      paragraphs: chunk,
-      hints: hintsFor(chunk.map(p => p.t).join("\n")),
-      part: c,
-      total: chunks.length,
-      source: (opts && opts.source) || "paste",
-    });
-    for (const r of data.paragraphs) { out[r.i] = r.t; done.add(r.i); }
-    if (data.plan) state.plan = data.plan;
-    if (data.remaining != null) { state.remaining = data.remaining; renderQuota(); }
-    renderCmp(paras, out, done);
-    setCmpStatus("改寫中… " + (c + 1) + "/" + chunks.length + " 批");
+  $cmp.innerHTML = "";
+  setCmpStatus("");
+  startProgress("改寫中");
+  let doneChars = 0;
+  try {
+    for (let c = 0; c < chunks.length; c++) {
+      const chunk = chunks[c], chars = size(chunk);
+      tickProgress(doneChars / totalChars, chars / totalChars, chars,
+        chunks.length > 1 ? "改寫中　第 " + (c + 1) + " / " + chunks.length + " 批" : "改寫中");
+      const data = await callRewrite({
+        paragraphs: chunk,
+        hints: hintsFor(chunk.map(p => p.t).join("\n")),
+        part: c,
+        total: chunks.length,
+        source: (opts && opts.source) || "paste",
+      });
+      for (const r of data.paragraphs) out[r.i] = r.t;
+      if (data.plan) state.plan = data.plan;
+      if (data.remaining != null) { state.remaining = data.remaining; renderQuota(); }
+      doneChars += chars;
+    }
+    clearInterval(progTimer);
+    setProgress(1, "完成");
+    await new Promise(r => setTimeout(r, 400));   // 讓條走到底再換成對照表
+  } finally {
+    endProgress();
   }
+  renderCmp(paras, out);
+  showCmpBody(true);
   return out;
 }
 
 async function doRewrite() {
   const raw = $in.value;
   if (!raw.trim()) { $in.focus(); return; }
-  if (!sb || !session) { location.hash = "login"; return; }
-  if (busy) return;
+  if (!sb || !session) { gotoLogin(); return; }
+  if (busy || titleBusy) return;
   if (state.plan === "free" && state.remaining === 0) {
     $cmpPanel.hidden = false;
     setCmpStatus("免費版這個月的 " + FREE_MONTHLY + " 篇用完了，下個月一號重算，或升級付費版。", true);
@@ -1509,7 +1991,7 @@ async function doRewrite() {
 
   const { plain } = scan(raw);
   const paras = splitParas(plain);
-  setBusy(true, "改寫中…");
+  setBusy(true, "改寫中");
   fileJob = null;
   $cmpDownload.hidden = true;
   setFileBadge("");
@@ -1543,6 +2025,143 @@ document.getElementById("cmpRescan").addEventListener("click", () => {
   render($in.value);
   $in.scrollIntoView({ block: "center", behavior: "smooth" });
 });
+// ── 生成標題：五種風格，免費版每天三次 ──────────────────
+// 額度由 Edge Function 呼叫 consume_daily() 原子扣，前端只是先擋一下、順便顯示剩餘次數；
+// 真的用完是後端回 429，這邊蓋上 #gate429 遮罩。日界線用台北時間，跟後端算法一致。
+const $titleBtn = document.getElementById("titleBtn");
+const $titlePanel = document.getElementById("titlePanel");
+const $titles = document.getElementById("titles");
+const $titleQuota = document.getElementById("titleQuota");
+const $titleStatus = document.getElementById("titleStatus");
+const $titleAgain = document.getElementById("titleAgain");
+const TITLE_MIN_CHARS = 40;     // 太短湊不出標題，先擋掉省一次額度
+const TITLE_MAX_CHARS = 6000;   // 跟 functions/title/index.ts 的 MAX_CHARS 一致
+
+// ── 429 遮罩 ───────────────────────────────────────────
+const $gate = document.getElementById("gate429");
+
+// 距台北時間的下一個零點還有多久（使用者不一定在台灣，所以不能拿本地時鐘算）
+function untilTpeMidnight() {
+  const t = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+  const mins = 24 * 60 - (t.getHours() * 60 + t.getMinutes());
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? h + " 小時 " + m + " 分後" : m + " 分後";
+}
+
+function showGate(msg) {
+  document.getElementById("gateMsg").textContent = msg
+    || ("免費版一天可以生 " + FREE_TITLE_DAILY + " 次標題，今天用完了。");
+  document.getElementById("gateWhen").textContent =
+    "台北時間 00:00 重算　／　" + untilTpeMidnight();
+  $gate.hidden = false;
+}
+function closeGate() { $gate.hidden = true; }
+document.getElementById("gateClose").addEventListener("click", closeGate);
+document.getElementById("gateUp").addEventListener("click", closeGate);
+$gate.addEventListener("click", (e) => { if (e.target === $gate) closeGate(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$gate.hidden) closeGate(); });
+
+// ── 面板 ───────────────────────────────────────────────
+function renderTitleQuota() {
+  if (state.plan === "paid") {
+    $titleQuota.innerHTML = '<b>付費版</b>　生成標題不限次數';
+    return;
+  }
+  const left = state.titleLeft == null ? "?" : state.titleLeft;
+  $titleQuota.innerHTML = "今天還能生 <b>" + left + "</b> 次　／　免費版每天 " + FREE_TITLE_DAILY + " 次";
+}
+
+function setTitleStatus(msg, isErr) {
+  $titleStatus.hidden = !msg;
+  $titleStatus.textContent = msg || "";
+  $titleStatus.classList.toggle("err", !!isErr);
+}
+
+function renderTitles(list) {
+  $titles.innerHTML = list.map((t) =>
+    '<div class="t" data-t="' + esc(t.title) + '">'
+    + '<span class="sty">' + esc(t.style) + '</span>'
+    + '<span class="txt">' + esc(t.title) + '</span>'
+    + '<span class="act">複製</span></div>').join("");
+}
+
+// 點整列複製
+$titles.addEventListener("click", async (e) => {
+  const row = e.target.closest(".t");
+  if (!row) return;
+  const act = row.querySelector(".act");
+  try {
+    await navigator.clipboard.writeText(row.dataset.t);
+    row.classList.add("copied");
+    act.textContent = "已複製";
+  } catch (err) { act.textContent = "複製失敗"; }
+  setTimeout(() => { row.classList.remove("copied"); act.textContent = "複製"; }, 1200);
+});
+
+let titleBusy = false;
+function setTitleBusy(on) {
+  titleBusy = on;
+  $titleBtn.disabled = on;
+  $titleAgain.disabled = on;
+  $titleBtn.textContent = on ? "生成中…" : "生成標題";
+}
+
+async function callTitle(text) {
+  const { data, error } = await sb.functions.invoke("title", { body: { text } });
+  if (error) {
+    let msg = error.message || String(error);
+    let status = 0;
+    try {
+      status = error.context && error.context.status;
+      const j = await error.context.json();
+      if (j && j.error) msg = j.error;
+      if (j && j.remaining != null) { state.titleLeft = j.remaining; renderTitleQuota(); }
+    } catch (e) { /* 不是 JSON 就用原訊息 */ }
+    if (status === 401) msg = "登入已失效，請重新登入。";
+    const err = new Error(msg);
+    err.status = status;
+    throw err;
+  }
+  return data;
+}
+
+async function doTitles() {
+  const raw = $in.value;
+  if (!raw.trim()) { $in.focus(); return; }
+  if (!sb || !session) { gotoLogin(); return; }
+  if (busy || titleBusy) return;
+  if (state.plan === "free" && state.titleLeft === 0) { showGate(); return; }
+
+  const text = scan(raw).plain.trim();
+  $titlePanel.hidden = false;
+  renderTitleQuota();
+  if (text.length < TITLE_MIN_CHARS) {
+    $titles.innerHTML = "";
+    setTitleStatus("文章太短，湊不出標題。請貼至少 " + TITLE_MIN_CHARS + " 字。", true);
+    $titlePanel.scrollIntoView({ block: "start", behavior: "smooth" });
+    return;
+  }
+
+  setTitleBusy(true);
+  $titlePanel.scrollIntoView({ block: "start", behavior: "smooth" });
+  setTitleStatus("生成中…　五種風格各一個");
+  try {
+    const data = await callTitle(text.slice(0, TITLE_MAX_CHARS));
+    renderTitles(data.titles || []);
+    if (data.plan) state.plan = data.plan;
+    if (data.remaining != null) state.titleLeft = data.remaining;
+    renderTitleQuota();
+    setTitleStatus("");
+  } catch (e) {
+    if (e.status === 429) { showGate(e.message); setTitleStatus(e.message, true); }
+    else setTitleStatus("生成失敗：" + e.message, true);
+  } finally {
+    setTitleBusy(false);
+  }
+}
+$titleBtn.addEventListener("click", doTitles);
+$titleAgain.addEventListener("click", doTitles);
+
 
 // ── 上傳檔案：Word／PDF 進來，改完照原格式出去（付費版）──────
 // 檔案全程在瀏覽器裡處理：拆段落 → 只把文字送去改寫 → 在本機組回同格式的檔案，整份檔不上傳。
@@ -1958,23 +2577,25 @@ async function doFile(file) {
     setCmpStatus("只吃 .docx、.pdf（純文字 .txt／.md 會直接填進輸入框）。舊版 .doc 請先在 Word 另存成 .docx。", true);
     return;
   }
-  if (!sb || !session) { location.hash = "login"; return; }
+  if (!sb || !session) { gotoLogin(); return; }
   $cmpPanel.hidden = false;
   $cmpPanel.scrollIntoView({ block: "start", behavior: "smooth" });
   if (state.plan !== "paid") {
     $cmp.innerHTML = "";
+    showCmpBody(false);
     $cmpStat.textContent = "";
     setCmpStatus("上傳 Word／PDF、改完照原格式下載，是付費版功能。到「訂閱方案」升級後就能用。", true);
     return;
   }
   if (busy) return;
-  setBusy(true, "處理中…");
+  setBusy(true, "處理中");
   fileJob = null;
   $cmpDownload.hidden = true;
   $cmp.innerHTML = "";
   $cmpStat.textContent = "";
   setFileBadge(file.name);
-  setCmpStatus("讀取 " + file.name + "…");
+  setCmpStatus("");
+  startProgress("讀取 " + file.name);
   try {
     const docObj = ext === "docx" ? await readDocx(file) : await readPdf(file);
     const n = docObj.paras.filter(p => p.t.trim()).length;
@@ -2024,11 +2645,109 @@ $cmpDownload.addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 });
 
-// ── hash 路由：#home / #plans / #contact / #faq ──
-// 未登入一律鎖在登入頁；登入頁不顯示導覽列。
+// ── 右下角小幫手 ──────────────────────────────────────
+// 罐頭問題（BOT_QUICK）按了直接回、不花模型額度；自己打字的才送 Edge Function chat。
+// 網站知識在 functions/chat/index.ts 的 SYSTEM 裡，方案或功能改了要去那邊同步。
+// 歷史只放記憶體：hash 換頁不會掉，重新整理就清掉。
+const BOT_QUICK = [
+  ["這網站在幹嘛？", "把中文文章貼進來，它用 43 條規則掃出 AI 腔用詞，畫底線、寫改法。再按「改寫」交給 AI 改成自然的中文，左邊原文、右邊改好的。掃描不用登入、不上傳。"],
+  ["文字會被上傳嗎？", "掃描不會，在你的瀏覽器裡跑。按「改寫」才會把那篇文字送到伺服器交給 AI 模型改，免費版改完不留檔。"],
+  ["免費版能改幾次？", "每月 5 篇，字數不限，掃描不限次數。月付 NT$180 不限次數，還能上傳 Word、PDF。價格以「訂閱方案」頁為準。"],
+  ["可以上傳 Word 或 PDF 嗎？", "可以，付費版限定。檔案在瀏覽器裡拆開，只有文字段落送去改寫，改完照原本格式下載，整份檔案不會離開你的電腦。"],
+];
+const BOT_HELLO = "嗨，我是校稿王小幫手。網站怎麼用、方案怎麼選、文字會不會被上傳，都可以問。";
+const BOT_MAX_CHARS = 600;   // 要跟 functions/chat/index.ts 的 MAX_USER_CHARS 一致
+
+const botEl = document.getElementById("bot");
+const botFab = document.getElementById("botFab");
+const botLog = document.getElementById("botLog");
+const botChips = document.getElementById("botChips");
+const botInput = document.getElementById("botInput");
+const botSendBtn = document.getElementById("botSend");
+const botHistory = [];   // {role, content}，送給模型的上下文
+let botBusy = false;
+
+function botSay(role, text, cls) {
+  const d = document.createElement("div");
+  d.className = "bot-msg " + (role === "user" ? "me" : "ai") + (cls ? " " + cls : "");
+  d.textContent = text;
+  botLog.appendChild(d);
+  botLog.scrollTop = botLog.scrollHeight;
+  return d;
+}
+
+function botOpen(open) {
+  botEl.hidden = !open;
+  botFab.classList.toggle("open", open);
+  botFab.setAttribute("aria-expanded", String(open));
+  botFab.setAttribute("aria-label", open ? "關閉小幫手" : "打開小幫手");
+  document.getElementById("botTip").hidden = true;
+  if (open) {
+    if (!botLog.childElementCount) botSay("assistant", BOT_HELLO);
+    botInput.focus();
+  }
+}
+
+async function botAsk(text) {
+  text = text.trim().slice(0, BOT_MAX_CHARS);
+  if (!text || botBusy) return;
+  botBusy = true;
+  botSendBtn.disabled = true;
+  botChips.hidden = true;
+  botSay("user", text);
+  botHistory.push({ role: "user", content: text });
+  const wait = botSay("assistant", "…", "wait");
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: botHistory.slice(-16) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ("伺服器回 " + res.status));
+    wait.classList.remove("wait");
+    wait.textContent = data.reply;
+    botHistory.push({ role: "assistant", content: data.reply });
+  } catch (e) {
+    wait.classList.remove("wait");
+    wait.classList.add("err");
+    // fetch 本身失敗（斷線、被擋）是英文 TypeError，換成人話
+    wait.textContent = (e instanceof TypeError) ? "現在連不上，等一下再試，或到「聯絡我們」寫信。" : (e.message || String(e));
+    botHistory.pop();   // 沒回答的問題不留在上下文，免得下次連著送兩則 user
+  } finally {
+    botBusy = false;
+    botSendBtn.disabled = false;
+    botLog.scrollTop = botLog.scrollHeight;
+    botInput.focus();
+  }
+}
+
+botChips.innerHTML = BOT_QUICK.map((q, i) => `<button type="button" data-i="${i}">${esc(q[0])}</button>`).join("");
+botChips.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-i]");
+  if (!b) return;
+  const [q, a] = BOT_QUICK[Number(b.dataset.i)];
+  botSay("user", q);
+  botSay("assistant", a);
+  botHistory.push({ role: "user", content: q }, { role: "assistant", content: a });
+  botChips.hidden = true;   // 開始對話就收起，畫面留給訊息
+});
+botFab.addEventListener("click", () => botOpen(botEl.hidden));
+document.getElementById("botClose").addEventListener("click", () => botOpen(false));
+document.getElementById("botForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const t = botInput.value;
+  botInput.value = "";
+  botAsk(t);
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !botEl.hidden) botOpen(false); });
+
+// ── hash 路由：#home / #plans / #knowledge / #contact / #faq ──
+// 頁面全部公開；只有改寫、上傳、付款這三個動作會把人送去 #login（gotoLogin），
+// 登入完再送回原本那頁（afterLogin）。
 // #checkout 與 #thanks 不在導覽列裡：結帳頁只能從訂閱方案帶方案代號進來
 // （#checkout?plan=monthly），感謝頁由綠界付完款導回（#thanks?o=訂單編號）。
-const PAGES = ["home", "plans", "checkout", "thanks", "contact", "faq", "login"];
+const PAGES = ["home", "plans", "checkout", "thanks", "knowledge", "news", "contact", "faq", "login"];
 
 // 顯示用；真正收多少錢由 supabase/functions/ecpay/index.ts 的 PLANS 決定，改價兩邊都要改
 const PLAN_INFO = {
@@ -2087,7 +2806,7 @@ function postToEcpay(action, fields) {
 
 document.getElementById("payForm").addEventListener("submit", async (e) => {
   e.preventDefault();  // 有欄位沒填，瀏覽器會先擋下來，走不到這行
-  if (!sb || !session) { location.hash = "login"; return; }
+  if (!sb || !session) { gotoLogin(); return; }
   if (location.protocol === "file:") {
     setPayMsg("用 file:// 開的頁面綠界導不回來。請用「開啟去ai味小工具.bat」或 node _server.mjs 起本機伺服器再試。");
     return;
@@ -2167,13 +2886,125 @@ async function showThanks(no) {
 
 function hashPage(h) { return (h || "").replace("#", "").split("?")[0]; }
 
+// 記住是從哪頁被送去登入的；OAuth 會整頁重載，所以放 sessionStorage 不放變數
+function gotoLogin() {
+  try { sessionStorage.setItem("loginBack", location.hash); } catch (e) {}
+  location.hash = "login";
+}
+function afterLogin() {
+  let back = "";
+  try { back = sessionStorage.getItem("loginBack") || ""; sessionStorage.removeItem("loginBack"); } catch (e) {}
+  const p = hashPage(back);
+  return (PAGES.includes(p) && p !== "login") ? back.replace("#", "") : "home";
+}
+
+// ── AI 新聞 ─────────────────────────────────────────
+// Google 沒有新聞 API，RSS 又擋 CORS，所以走 Edge Function `news` 代抓，
+// 前端就是一個 GET：/functions/v1/news?topic=...&n=...
+// 主題 key 要跟 functions/news/index.ts 的 TOPICS 一致，關聯度過濾也在那支函式裡。
+const NEWS_TOPICS = [
+  { key: "deslop",  label: "去 AI 味" },
+  { key: "writing", label: "AI 寫作" },
+  { key: "detect",  label: "抓包 AI" },
+  { key: "seo",     label: "AI 與 SEO" },
+];
+const NEWS_N = 20;
+const newsCache = new Map();   // topic → { items, note }，同一次造訪切回來不重抓
+let newsTopic = NEWS_TOPICS[0].key;
+let newsLoading = false;
+
+function newsDate(iso) {
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  if (isNaN(t)) return "";
+  const mins = Math.floor((Date.now() - t) / 60000);
+  if (mins < 60) return mins < 1 ? "剛剛" : mins + " 分鐘前";
+  if (mins < 60 * 24) return Math.floor(mins / 60) + " 小時前";
+  const d = new Date(t);
+  const pad = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
+
+function renderNewsTopics() {
+  const box = document.getElementById("newsTopics");
+  if (box.dataset.ready) {
+    for (const b of box.querySelectorAll("button")) b.classList.toggle("on", b.dataset.topic === newsTopic);
+    return;
+  }
+  box.innerHTML = NEWS_TOPICS.map((t) =>
+    `<button type="button" data-topic="${t.key}" class="${t.key === newsTopic ? "on" : ""}">${esc(t.label)}</button>`).join("");
+  box.dataset.ready = "1";
+  box.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-topic]");
+    if (!b || b.dataset.topic === newsTopic) return;
+    newsTopic = b.dataset.topic;
+    renderNewsTopics();
+    loadNews();
+  });
+}
+
+function renderNews(items) {
+  const list = document.getElementById("newsList");
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">這個主題暫時沒有新聞。</div>';
+    return;
+  }
+  list.innerHTML = items.map((it) => `<a class="post" href="${esc(it.link)}" target="_blank" rel="noopener">
+        <div class="meta">${esc(newsDate(it.date))}${it.source ? `<span class="src">${esc(it.source)}</span>` : ""}</div>
+        <div class="t">${esc(it.title)}</div>
+      </a>`).join("");
+}
+
+async function loadNews(force) {
+  const list = document.getElementById("newsList");
+  const note = document.getElementById("newsNote");
+  renderNewsTopics();
+
+  const hit = newsCache.get(newsTopic);
+  if (!force && hit) {
+    renderNews(hit.items);
+    note.textContent = hit.note;
+    return;
+  }
+  if (newsLoading) return;
+  newsLoading = true;
+  list.innerHTML = '<div class="empty">正在抓新聞…</div>';
+  note.textContent = "";
+
+  try {
+    const url = `${SUPABASE_URL}/functions/v1/news?topic=${encodeURIComponent(newsTopic)}&n=${NEWS_N}`;
+    const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ("伺服器回 " + res.status));
+    // 後端回的是 Google 的相關度排序，新聞頁還是照時間新到舊看比較合理
+    const items = (Array.isArray(data.items) ? data.items : [])
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const noteText = `${items.length} 則・抓取時間 ${newsDate(data.cachedAt) || "剛剛"}・來源 Google 新聞`;
+    newsCache.set(newsTopic, { items, note: noteText });
+    renderNews(items);
+    note.textContent = noteText;
+  } catch (e) {
+    list.innerHTML = `<div class="empty">抓不到新聞：${esc(e.message || String(e))}</div>`;
+    note.textContent = "可以按右邊重新抓取再試一次。";
+  } finally {
+    newsLoading = false;
+  }
+}
+
+document.getElementById("newsReload").addEventListener("click", () => loadNews(true));
+
 function route() {
   const auth = signedIn();
   const query = (location.hash || "").split("?")[1] || "";
   let p = hashPage(location.hash);
   if (!PAGES.includes(p)) p = "home";
-  if (!auth) p = "login";
+  if (p === "login" && auth) {
+    // 已登入就沒必要看登入頁
+    history.replaceState(null, "", location.pathname + "#home");
+    p = "home";
+  }
   if (p === "checkout") fillCheckout(new URLSearchParams(query).get("plan"));
+  if (p === "news") loadNews();
   if (p === "thanks") {
     // 網址一定要帶訂單編號（綠界導回時帶的 #thanks?o=...），沒有就送回方案頁
     const no = new URLSearchParams(query).get("o");
@@ -2186,7 +3017,7 @@ function route() {
   for (const a of document.querySelectorAll(".nav a")) {
     a.classList.toggle("on", a.getAttribute("href") === "#" + p);
   }
-  document.getElementById("nav").hidden = !auth;
+  document.getElementById("doLogin").hidden = auth;
   document.getElementById("doLogout").hidden = !auth;
 
   // 刊頭顯示現在登入的是誰（Google 會給 full_name 和 avatar_url）

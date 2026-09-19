@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 「校稿王」：貼上文字後用一組正則掃出中文 AI 腔用詞，再按一下交給 Claude 改寫的單頁工具。掃描純前端、離線可用；改寫、登入、方案、付款走 Supabase（Auth + Edge Functions + Postgres）。
 
-`index.html` 就是整個前端——CSS、markup、規則、掃描、改寫、上傳檔案、路由全在同一個檔案裡（約 2200 行）。沒有 build、沒有 bundler、沒有 npm 相依、沒有測試框架。改完存檔重新整理瀏覽器就是全部的開發循環。後端在 `supabase/`：`functions/rewrite`（改寫）、`functions/ecpay`（綠界金流）、`migrations/`（profiles／usage／rewrites／orders）。
+`index.html` 就是整個前端——CSS、markup、規則、掃描、改寫、上傳檔案、路由全在同一個檔案裡（約 2200 行）。沒有 build、沒有 bundler、沒有 npm 相依、沒有測試框架。改完存檔重新整理瀏覽器就是全部的開發循環。後端在 `supabase/`：`functions/rewrite`（改寫）、`functions/title`（生成標題）、`functions/news`（AI 新聞）、`functions/ecpay`（綠界金流）、`migrations/`（profiles／usage／daily_usage／rewrites／orders）。
 
 ## 執行方式
 
@@ -41,10 +41,29 @@ node _server.mjs            # http://localhost:8731，會自動開瀏覽器
 
 ### 登入、方案、改寫
 
-- 未登入一律鎖在 `#login`（Google OAuth 或 Email 密碼）。`route()` 是 hash 路由，頁面清單在 `PAGES`。
+- 頁面全部公開，未登入也能掃描、看方案、看文章；只有改寫、上傳檔案、付款三個動作會呼叫 `gotoLogin()` 送去 `#login`（Google OAuth 或 Email 密碼），登入完由 `afterLogin()` 送回原本那頁（記在 sessionStorage，因為 OAuth 會整頁重載）。`route()` 是 hash 路由，頁面清單在 `PAGES`。
 - 方案在 `profiles.plan`（free／paid）+ `paid_until`（null 是手動標記的永久付費）。免費版每月 `FREE_MONTHLY` 篇改寫，額度由 Edge Function 呼叫 `consume_quota()` 原子扣，**前端的 `FREE_MONTHLY` 要跟 `functions/rewrite/index.ts` 一致**。手動開通：`update public.profiles set plan = 'paid' where id = '<uuid>'`。
 - 改寫流程 `runRewrite(paras, {source})`：文章先切段（`splitParas`，`i` 就是位置），再依 `CHUNK_CHARS` 分批打 `rewrite`，逐批回填左右對照區。`source` 是 `paste`／`docx`／`pdf`，後端看到 `docx`／`pdf` 且非付費直接 403。
 - 前端用的是 publishable key，閘道層驗不了 JWT，所以 `config.toml` 把 `verify_jwt` 關掉、函式裡自己 `auth.getUser(token)`。
+
+### 生成標題
+
+「生成標題」按鈕跟「改寫」一排，把文章（`scan(raw).plain`，最多 `TITLE_MAX_CHARS` 字）丟給 Edge Function `title`，一次回五個候選標題，每種風格一個，點一列複製一個。
+
+- **五種風格的名稱兩邊要一致**：後端 `STYLES`（直述、疑問、數字、痛點、故事）是唯一來源，`parseTitles()` 拿它對位、對不上的用剩下的標題補位，前端只是把回來的 `style` 畫出來。
+- **額度是每日制，跟改寫的每月制分開**：`daily_usage (user_id, ymd, kind, n)`，kind 現在只有 `'title'`，以後別的每日限次功能可以沿用同一張表。原子扣用 `consume_daily()`，超過上限回 `-1` → 函式回 **429**。前端 `FREE_TITLE_DAILY` 要跟 `functions/title/index.ts` 一致（跟 `FREE_MONTHLY` 同一套規矩）。
+- 日界線都是**台北時間**：後端 `to_char(now() at time zone 'Asia/Taipei', 'YYYY-MM-DD')`，前端 `ymdTpe()` 用 `toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" })` 拿同格式的字串，不能改成本地時間。
+- **額度是先扣再叫模型**，模型掛掉會 `refund_daily()` 退一次回去。一天只有三次，白扣很有感；改這段時別把退還拿掉。
+- 429 畫面是 `#gate429` 遮罩卡片（`showGate()`），寫在 `<script>` 之前，**不能搬到 `</script>` 後面**，不然 `document.getElementById` 拿不到。
+
+### AI 新聞
+
+導覽列「AI新聞」（`#news`）是公開頁，跟 AI 知識一樣不用登入。Google 沒有新聞 API，`news.google.com/rss/search` 的 RSS 又擋 CORS，所以走 Edge Function `news` 代抓再轉 JSON；前端用 `fetch` 打 GET（不是 `sb.functions.invoke`，那個是 POST），帶 apikey header。
+
+- 四個主題（去 AI 味／AI 寫作／抓包 AI／AI 與 SEO）的 key 兩邊要一致：前端 `NEWS_TOPICS`、後端 `TOPICS`。也吃 `?q=` 自由關鍵字（只去重，不套主題過濾）。
+- **關聯度全靠 `TOPICS` 那三層，改查詢前先想過**：查詢一定要用引號片語（`"AI寫作"`），裸查詢 `AI 寫作 OR AI 文章` 會被「AI」單字洗版，回來一半是財經新聞；標題再過 `must`／`needText`／`deny` 與全域 `DENY`（股市題材、社會案件、工業檢測這些同字不同義的）；最後把多家轉載的同一則去重。過濾到空的會自動退回未過濾版本（`filtered:false`）。
+- 函式裡記憶體快取 15 分鐘（Edge 實例重用時才有），Google 抓不到就退回舊快取；前端另外用 `newsCache` 記住這次造訪抓過的主題，切回去不重打。
+- Edge Runtime 沒有 DOMParser，RSS 用字面正則逐個 `<item>` 撈。**別把正則改成 `new RegExp` 拼字串**，跳脫層數很容易寫錯（`\s` 少一層就變成字面 `s`，解析結果會靜默變成 0 筆）。
 
 ### 上傳檔案（付費版）
 
