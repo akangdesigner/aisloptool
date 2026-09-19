@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=block" rel="stylesheet">
+<style>
+  :root{
+    --paper:#efe9dd; --panel:#faf7f0; --tone:#ded7c8; --ink:#17150f; --red:#c0392b;
+    --dim:#5b544a; --rule:#b9b1a1; --hl:#f3c9c3;
+    --mincho:"Zen Old Mincho","Noto Serif TC",serif;
+    --ui:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; width:1200px; height:630px; overflow:hidden}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--ui);
+    padding:36px;
+  }
+  .frame{
+    width:100%; height:100%; border:4px solid var(--ink); background:var(--panel);
+    position:relative; display:flex; align-items:center; padding:0 64px 0 60px; gap:44px;
+  }
+  /* 右下角網點 */
+  .frame::after{
+    content:""; position:absolute; right:0; bottom:0; width:360px; height:220px; z-index:0;
+    background:radial-gradient(var(--rule) 1.3px,transparent 1.8px) 0 0/9px 9px;
+    -webkit-mask-image:linear-gradient(225deg,#000 20%,transparent 70%);
+    mask-image:linear-gradient(225deg,#000 20%,transparent 70%);
+  }
+  .mark{flex:none; width:250px; height:250px; position:relative; z-index:1}
+  .mark img{width:100%; height:100%; object-fit:contain; display:block}
+  .text{flex:1; position:relative; z-index:1; min-width:0}
+  .kicker{
+    display:inline-block; font-family:var(--mincho); font-size:20px; font-weight:700;
+    letter-spacing:.3em; padding:4px 14px 4px 18px; border:2px solid var(--ink);
+    background:var(--paper); margin-bottom:18px;
+  }
+  h1{
+    margin:0; font-family:var(--mincho); font-weight:900; font-size:96px; line-height:1;
+    letter-spacing:.06em;
+  }
+  h1 small{
+    display:block; font-size:34px; font-weight:700; letter-spacing:.2em; margin-top:16px;
+  }
+  .desc{
+    margin:26px 0 0; font-size:24px; line-height:1.65; color:var(--dim); font-weight:500;
+    max-width:690px;
+  }
+  .desc b{color:var(--ink); font-weight:700}
+  .sample{
+    margin-top:26px; display:inline-flex; align-items:center; gap:14px;
+    font-size:21px; line-height:1; padding:12px 18px; border:2px solid var(--ink);
+    background:var(--paper);
+  }
+  .sample .tag{
+    font-family:var(--mincho); font-size:14px; letter-spacing:.2em; font-weight:700;
+    background:var(--ink); color:var(--paper); padding:5px 9px 5px 11px;
+  }
+  mark{
+    background:var(--hl); color:var(--ink); padding:2px 3px 0;
+    border-bottom:3px solid var(--red); text-decoration:none;
+  }
+  .corner{
+    position:absolute; top:-4px; left:-4px; z-index:2;
+    font-family:var(--mincho); font-size:15px; font-weight:700; letter-spacing:.2em;
+    background:var(--ink); color:var(--paper); padding:6px 14px 6px 16px;
+  }
+  .url{
+    position:absolute; right:26px; bottom:18px; z-index:2;
+    font-family:var(--mincho); font-size:18px; letter-spacing:.06em; color:var(--dim);
+  }
+  .url::before{content:""; display:inline-block; width:10px; height:10px; background:var(--red); margin-right:12px; vertical-align:1px}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="corner">去 AI 味檢查</div>
+  <div class="mark"><img src="mark/mark-512.png" alt=""></div>
+  <div class="text">
+    <div class="kicker">中文文章專用</div>
+    <h1>校稿王<small>抓出 AI 腔，再幫你改好</small></h1>
+    <p class="desc">貼上文字，<b>43 條規則</b>標出中文 AI 腔用詞，畫底線、寫改法；按「改寫」交給 AI 潤稿，左右對照。掃描在瀏覽器裡跑，不上傳、不改字。</p>
+    <div class="sample"><span class="tag">命中</span><span>這<mark>不僅</mark>省時，<mark>更重要的是</mark>能<mark>顯著提升</mark>品質</span></div>
+  </div>
+  <div class="url">aitool.aiqkangber.com</div>
+</div>
+</body>
+</html>
